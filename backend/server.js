@@ -19,6 +19,15 @@ app.get('/api/data', (req, res) => {
   });
 });
 
+// Health check endpoint for deployment platforms
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
