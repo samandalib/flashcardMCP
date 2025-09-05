@@ -1,0 +1,19 @@
+{
+  "name": "flashcard-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP Server for Flashcard Research Synthesizer",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "keywords": ["mcp", "flashcard", "research", "synthesis"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "@supabase/supabase-js": "^2.48.0",
+    "dotenv": "^16.4.7"
+  }
+}

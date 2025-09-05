@@ -1,0 +1,34 @@
+{
+  "navigation": {
+    "projects": "پروژه‌ها",
+    "newProject": "پروژه جدید",
+    "synthesize": "ترکیب یافته‌ها"
+  },
+  "projects": {
+    "title": "پروژه‌ها",
+    "createNew": "ایجاد پروژه جدید",
+    "noProjects": "هنوز پروژه‌ای وجود ندارد",
+    "createFirst": "اولین پروژه خود را ایجاد کنید"
+  },
+  "cards": {
+    "title": "کارت‌های تحقیقاتی",
+    "createNew": "کارت جدید",
+    "noCards": "هنوز کارتی وجود ندارد",
+    "createFirst": "اولین یافته تحقیقاتی خود را اضافه کنید"
+  },
+  "common": {
+    "save": "ذخیره",
+    "cancel": "لغو",
+    "edit": "ویرایش",
+    "delete": "حذف",
+    "loading": "در حال بارگذاری...",
+    "error": "خطا",
+    "success": "موفقیت"
+  },
+  "language": {
+    "switch": "تغییر زبان",
+    "english": "English",
+    "farsi": "فارسی"
+  }
+}
+

@@ -1,0 +1,34 @@
+{
+  "navigation": {
+    "projects": "Projects",
+    "newProject": "New Project",
+    "synthesize": "Synthesize Findings"
+  },
+  "projects": {
+    "title": "Projects",
+    "createNew": "Create New Project",
+    "noProjects": "No projects yet",
+    "createFirst": "Create your first project to get started"
+  },
+  "cards": {
+    "title": "Research Cards",
+    "createNew": "New Card",
+    "noCards": "No cards yet",
+    "createFirst": "Add your first research finding"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success"
+  },
+  "language": {
+    "switch": "Switch Language",
+    "english": "English",
+    "farsi": "فارسی"
+  }
+}
+
