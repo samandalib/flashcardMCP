@@ -79,20 +79,31 @@ export default function ProjectDetailPage() {
       setIsLoading(true);
       setError(null);
 
+      console.log('Fetching project details for:', projectId);
+      
       // Fetch project details
       const projectResponse = await fetch(`${API_BASE_URL}/projects/${projectId}`);
+      console.log('Project response status:', projectResponse.status);
+      
       if (!projectResponse.ok) {
-        throw new Error('Project not found');
+        throw new Error(`Project not found: ${projectResponse.status}`);
       }
       const projectData = await projectResponse.json();
+      console.log('Project data:', projectData);
       setProject(projectData.project);
 
+      console.log('Fetching notes for project:', projectId);
+      
       // Fetch notes for this project
       const notesResponse = await fetch(`${API_BASE_URL}/projects/${projectId}/notes`);
+      console.log('Notes response status:', notesResponse.status);
+      
       if (notesResponse.ok) {
         const notesData = await notesResponse.json();
+        console.log('Notes data:', notesData);
         setNotes(notesData.notes || []);
       } else {
+        console.log('Notes fetch failed, setting empty array');
         setNotes([]);
       }
     } catch (err) {
