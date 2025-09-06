@@ -48,9 +48,7 @@ interface Project {
   updated_at: string;
 }
 
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://your-deployed-backend-url.com' 
-  : 'http://localhost:3001';
+const API_BASE_URL = '/api';
 
 export default function HomePage() {
   const router = useRouter();
