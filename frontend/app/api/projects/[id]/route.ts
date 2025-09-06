@@ -14,10 +14,10 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 // GET /api/projects/[id] - Get project details
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     const { data, error } = await supabase
       .from('projects')

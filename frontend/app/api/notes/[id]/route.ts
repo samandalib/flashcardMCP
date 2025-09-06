@@ -14,10 +14,10 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 // PUT /api/notes/[id] - Update existing note
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const { title, content } = body;
 
@@ -78,10 +78,10 @@ export async function PUT(
 // DELETE /api/notes/[id] - Delete note
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     const { error } = await supabase
       .from('notes')

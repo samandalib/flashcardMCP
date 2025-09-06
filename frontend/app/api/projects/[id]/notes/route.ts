@@ -14,10 +14,10 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 // GET /api/projects/[id]/notes - List project notes
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     const { data, error } = await supabase
       .from('notes')
@@ -40,10 +40,10 @@ export async function GET(
 // POST /api/projects/[id]/notes - Create new note
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const { title, content } = body;
 
