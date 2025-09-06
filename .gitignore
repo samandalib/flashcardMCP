@@ -79,7 +79,7 @@ dist
 
 # Gatsby files
 .cache/
-public
+# public - commented out for Next.js public directory
 
 # Storybook build outputs
 .out
@@ -104,3 +104,18 @@ temp/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Next.js specific
+/.next/
+/out/
+*.tsbuildinfo
+next-env.d.ts
+
+# Vercel
+.vercel
+
+# Archive directory
+archive/
+
+# TypeScript
+*.tsbuildinfo
