@@ -6,7 +6,6 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "export": "next export",
     "dev:fullstack": "next dev --port 3000"
   },
   "dependencies": {
