@@ -1,54 +1,58 @@
 # Technical Stack Decisions
 
-**Last Updated:** January 2025
+**Last Updated:** January 16, 2025
 
-## Current Stack
+## Current Stack (Implemented)
 
 ### Frontend
 - **Next.js 15** (App Router)
 - **TypeScript** 
 - **Tailwind CSS v4**
 - **shadcn/ui** (component library)
+- **React Context** (for i18n and state management)
 
 ### Backend  
-- **Next.js API Routes** (full-stack approach)
-- **Supabase** (PostgreSQL + Storage)
+- **Express.js** (RESTful API server)
+- **Node.js** (runtime environment)
+- **Supabase** (PostgreSQL database + Storage)
 
-### MCP Integration
+### MCP Integration (Planned)
 - **Separate Node.js service** using @modelcontextprotocol/sdk
-- **Communication:** HTTP API between Next.js and MCP server
+- **Communication:** HTTP API between Express and MCP server
 
 ### Deployment
-- **Frontend/API:** Vercel
-- **MCP Server:** Railway/Render
+- **Frontend:** Vercel
+- **Backend:** To be determined (Railway/Render/VPS)
 - **Database:** Supabase Cloud
 
 ---
 
 ## Key Architectural Decisions
 
-### Decision 1: Next.js Full-Stack vs Express Backend
+### Decision 1: Express Backend vs Next.js API Routes
 
-**Current State:** Project currently has separate Express backend (`/backend/server.js`)
+**Initial Plan:** Migrate to Next.js API Routes for full-stack approach
 
-**Decision:** Migrate to Next.js API Routes instead of separate Express server
+**Actual Decision:** Keep Express.js backend
 
-**Rationale:**
-- Single codebase to maintain and deploy
-- Shared TypeScript types between frontend and backend
-- Better performance with Next.js optimizations
-- Simplified deployment (single Vercel app)
-- Cost effective (free Vercel tier)
+**Rationale for Change:**
+- Express backend was already implemented and working
+- Focused development effort on core features rather than migration
+- Express provides more flexibility for complex API logic
+- Easier to scale backend independently
+- Team familiarity with Express patterns
 
 **Trade-offs:**
-- ✅ Simpler architecture and deployment
-- ✅ Type safety across full stack
-- ✅ Better DX with hot reload
-- ❌ Less flexibility for complex backend logic
-- ❌ Vendor lock-in to Vercel ecosystem
+- ✅ More flexibility for complex backend operations
+- ✅ Independent backend scaling
+- ✅ No migration risks or downtime
+- ✅ Better separation of concerns
+- ❌ Two codebases to maintain
+- ❌ Separate deployment processes
+- ❌ No shared TypeScript types (yet)
 
-**Date:** January 2025  
-**Status:** Decided  
+**Date:** January 16, 2025  
+**Status:** Implemented and Confirmed  
 
 ### Decision 2: Supabase vs Self-hosted PostgreSQL
 
@@ -90,6 +94,92 @@
 
 **Date:** January 2025  
 **Status:** Decided  
+
+### Decision 4: Rich Text Editor Implementation
+
+**Options Considered:**
+1. **Draft.js** - Facebook's rich text framework
+2. **Slate.js** - Completely customizable rich text editor
+3. **TinyMCE/CKEditor** - Traditional WYSIWYG editors
+4. **contentEditable** - Native browser API with custom toolbar
+
+**Decision:** Custom contentEditable implementation with toolbar
+
+**Rationale:**
+- Apple Notes-style simplicity and performance
+- Full control over formatting and behavior
+- Lighter weight than full editor frameworks
+- Better integration with React ecosystem
+- Easier to implement bilingual text direction
+
+**Trade-offs:**
+- ✅ Lightweight and fast
+- ✅ Complete customization control
+- ✅ Native browser behavior
+- ✅ Better RTL/LTR support
+- ❌ More development effort for complex features
+- ❌ Cross-browser compatibility concerns
+- ❌ Manual handling of edge cases
+
+**Date:** January 16, 2025  
+**Status:** Implemented
+
+### Decision 5: Internationalization Approach
+
+**Options Considered:**
+1. **next-intl** - Next.js focused i18n library
+2. **react-i18next** - Popular React i18n solution
+3. **Custom React Context** - Simple state-based approach
+
+**Decision:** Custom React Context with localStorage persistence
+
+**Rationale:**
+- Only two languages (English/Farsi) needed
+- Simple toggle-based switching vs route-based locales
+- Better control over text direction changes
+- Avoided hydration issues with next-intl
+- Simpler implementation for MVP
+
+**Trade-offs:**
+- ✅ Simple and lightweight
+- ✅ Full control over direction changes
+- ✅ No hydration issues
+- ✅ Easy to understand and maintain
+- ❌ Less scalable for many languages
+- ❌ Manual translation management
+- ❌ No advanced i18n features (pluralization, etc.)
+
+**Date:** January 16, 2025  
+**Status:** Implemented
+
+### Decision 6: Content Storage Format
+
+**Options Considered:**
+1. **Structured JSON** - Parsed content with formatting metadata
+2. **Markdown** - Plain text with formatting syntax
+3. **HTML** - Rich HTML content storage
+4. **Draft.js ContentState** - Editor-specific format
+
+**Decision:** HTML content storage in TEXT database fields
+
+**Rationale:**
+- Direct compatibility with contentEditable
+- Preserves all formatting information
+- Easy to render without parsing
+- Supports media embeds and complex layouts
+- Standard format for rich content
+
+**Trade-offs:**
+- ✅ Full formatting preservation
+- ✅ Direct rendering capability
+- ✅ Media embed support
+- ✅ Standard web format
+- ❌ Potential security concerns (XSS)
+- ❌ Larger storage size than markdown
+- ❌ Less portable than structured formats
+
+**Date:** January 16, 2025  
+**Status:** Implemented
 
 ---
 
