@@ -40,7 +40,11 @@ export async function PUT(
       }, { status: 400 });
     }
 
-    const updateData = {
+    const updateData: {
+      updated_at: string;
+      title?: string;
+      content?: string;
+    } = {
       updated_at: new Date().toISOString()
     };
 
