@@ -16,17 +16,11 @@ function getSupabaseClient() {
 // GET /api/projects - List all projects
 export async function GET() {
   try {
-    console.log('GET /api/projects - Starting request');
-    
     const supabase = getSupabaseClient();
-    console.log('Supabase client created successfully');
-    
     const { data, error } = await supabase
       .from('projects')
       .select('*')
       .order('created_at', { ascending: false });
-
-    console.log('Supabase query completed. Data:', data?.length || 0, 'Error:', error);
 
     if (error) {
       console.error('Supabase error:', error);
