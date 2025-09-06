@@ -16,10 +16,10 @@ function getSupabaseClient() {
 // PUT /api/notes/[id] - Update a note
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const noteId = params.id;
+    const { id: noteId } = await params;
     const body = await request.json();
     const { title, content } = body;
 
@@ -76,10 +76,10 @@ export async function PUT(
 // DELETE /api/notes/[id] - Delete a note
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const noteId = params.id;
+    const { id: noteId } = await params;
 
     if (!noteId) {
       return NextResponse.json({ error: 'Note ID is required' }, { status: 400 });
