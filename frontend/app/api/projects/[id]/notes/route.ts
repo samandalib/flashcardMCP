@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+// Helper function to get Supabase client
+function getSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!supabaseUrl || !supabaseKey) {
-  throw new Error('Missing Supabase environment variables');
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Missing Supabase environment variables');
+  }
+
+  return createClient(supabaseUrl, supabaseKey);
 }
-
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 // GET /api/projects/[id]/notes - List project notes
 export async function GET(
@@ -19,6 +21,7 @@ export async function GET(
   try {
     const { id } = await params;
 
+    const supabase = getSupabaseClient();
     const { data, error } = await supabase
       .from('notes')
       .select('*')
@@ -66,6 +69,7 @@ export async function POST(
       }, { status: 400 });
     }
 
+    const supabase = getSupabaseClient();
     const { data, error } = await supabase
       .from('notes')
       .insert([
