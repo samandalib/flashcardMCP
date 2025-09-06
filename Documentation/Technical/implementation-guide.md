@@ -1,28 +1,41 @@
 # Implementation Guide - Research Note Synthesizer
 
-**Version:** v0.2  
+**Version:** v0.3  
 **Last Updated:** January 16, 2025  
 **Audience:** Developers, Technical Contributors
 
 ## Overview
 
-This guide documents the technical implementation details, key components, and development patterns used in the Research Note Synthesizer application.
+This guide documents the technical implementation details, key components, and development patterns used in the Research Note Synthesizer application. **Updated for v0.3 serverless architecture.**
 
 ---
 
 ## Architecture Overview
 
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Frontend      │    │   Backend       │    │   Database      │
-│   (Next.js)     │◄──►│   (Express)     │◄──►│   (Supabase)    │
-│                 │    │                 │    │                 │
-│ • React         │    │ • Node.js       │    │ • PostgreSQL    │
-│ • TypeScript    │    │ • RESTful API   │    │ • File Storage  │
-│ • Tailwind      │    │ • CORS enabled  │    │ • Row Level     │
-│ • shadcn/ui     │    │ • Input validation│    │   Security      │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│                    Vercel Platform                      │
+│                                                         │
+│  ┌─────────────────┐    ┌─────────────────┐            │
+│  │   Frontend      │    │   API Routes     │            │
+│  │   (Next.js)     │◄──►│   (Serverless)  │            │
+│  │                 │    │                 │            │
+│  │ • React         │    │ • NextRequest   │            │
+│  │ • TypeScript    │    │ • NextResponse  │            │
+│  │ • Tailwind      │    │ • Route Handlers│            │
+│  │ • shadcn/ui     │    │ • Supabase Client│           │
+│  └─────────────────┘    └─────────────────┘            │
+│                                                         │
+│  ┌─────────────────────────────────────────────────────┐│
+│  │              Supabase (External)                    ││
+│  │ • PostgreSQL Database                               ││
+│  │ • File Storage                                      ││
+│  │ • Row Level Security                                ││
+│  └─────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────┘
 ```
+
+**Key Change in v0.3:** Migrated from separate Express backend to Next.js API routes for serverless deployment on Vercel.
 
 ---
 
@@ -144,78 +157,119 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
 
 ---
 
-## Backend API Design
+## Backend API Design (Serverless)
 
-### RESTful Endpoints
+### Next.js API Routes
 
 **Projects:**
 ```
 GET    /api/projects          # List all projects
 POST   /api/projects          # Create new project
-GET    /api/projects/:id      # Get project details
+GET    /api/projects/[id]     # Get project details
 ```
 
 **Notes:**
 ```
-GET    /api/projects/:id/notes    # List project notes
-POST   /api/projects/:id/notes    # Create new note
-PUT    /api/notes/:id             # Update existing note
-DELETE /api/notes/:id             # Delete note
+GET    /api/projects/[id]/notes    # List project notes
+POST   /api/projects/[id]/notes    # Create new note
+PUT    /api/notes/[id]             # Update existing note
+DELETE /api/notes/[id]             # Delete note
 ```
 
-### Input Validation Example
+### API Route Implementation Example
 
-```javascript
-// Note creation validation
-app.post('/api/projects/:id/notes', async (req, res) => {
+```typescript
+// frontend/app/api/projects/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+
+// Initialize Supabase client
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error('Missing Supabase environment variables');
+}
+
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+// GET /api/projects - List all projects
+export async function GET() {
   try {
-    const { id } = req.params;
-    const { title, content } = req.body;
+    const { data, error } = await supabase
+      .from('projects')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Supabase error:', error);
+      return NextResponse.json({ error: 'Failed to fetch projects', details: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ projects: data || [] });
+  } catch (error) {
+    console.error('Unexpected error in API route:', error);
+    return NextResponse.json({ 
+      error: 'Internal server error', 
+      details: error instanceof Error ? error.message : 'Unknown error' 
+    }, { status: 500 });
+  }
+}
+
+// POST /api/projects - Create new project
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { name, description } = body;
 
     // Validate input
-    if (!title || typeof title !== 'string' || title.trim().length < 1) {
-      return res.status(400).json({
-        error: 'Title is required'
-      });
+    if (!name || typeof name !== 'string' || name.trim().length < 1) {
+      return NextResponse.json({
+        error: 'Project name is required'
+      }, { status: 400 });
     }
 
-    if (!content || typeof content !== 'string') {
-      return res.status(400).json({
-        error: 'Content is required'
-      });
+    if (name.trim().length > 100) {
+      return NextResponse.json({
+        error: 'Project name must be less than 100 characters'
+      }, { status: 400 });
     }
 
-    if (title.trim().length > 200) {
-      return res.status(400).json({
-        error: 'Title must be less than 200 characters'
-      });
-    }
-
-    // Database operation
     const { data, error } = await supabase
-      .from('notes')
-      .insert([{
-        project_id: id,
-        title: title.trim(),
-        content: content,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }])
+      .from('projects')
+      .insert([
+        {
+          name: name.trim(),
+          description: description?.trim() || null,
+          created_at: new Date().toISOString()
+        }
+      ])
       .select()
       .single();
 
     if (error) {
-      console.error('Error creating note:', error);
-      return res.status(500).json({ error: 'Failed to create note' });
+      console.error('Error creating project:', error);
+      return NextResponse.json({ error: 'Failed to create project' }, { status: 500 });
     }
 
-    res.status(201).json({ note: data });
+    return NextResponse.json({ project: data }, { status: 201 });
   } catch (error) {
     console.error('Unexpected error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-});
+}
 ```
+
+### Key Differences from Express
+
+| Aspect | Express (v0.2) | Next.js API Routes (v0.3) |
+|--------|----------------|----------------------------|
+| **Request/Response** | `req, res` | `NextRequest, NextResponse` |
+| **Route Definition** | `app.get('/api/projects', handler)` | `export async function GET()` |
+| **Error Handling** | Middleware | try/catch with NextResponse |
+| **Environment** | `process.env` | Next.js env system |
+| **Deployment** | Separate service | Serverless functions |
+| **Scaling** | Manual | Automatic with Vercel |
 
 ---
 
@@ -452,25 +506,53 @@ const editorDirection = locale === 'fa' ? 'rtl' : 'ltr';
 
 ---
 
-## Deployment Guide
+## Deployment Guide (v0.3 - Serverless)
 
-### Frontend (Vercel)
-1. Connect GitHub repository
-2. Configure environment variables
+### Single Vercel Deployment
+
+**Frontend + Backend (API Routes):**
+1. Connect GitHub repository to Vercel
+2. Configure environment variables in Vercel dashboard:
+   - `NEXT_PUBLIC_SUPABASE_URL` = your Supabase URL
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` = your Supabase anon key
+   - `SUPABASE_SERVICE_ROLE_KEY` = your Supabase service role key
 3. Set build command: `cd frontend && npm run build`
 4. Set output directory: `frontend/.next`
+5. Deploy automatically on git push
 
-### Backend (To be determined)
-1. Railway/Render deployment
-2. Environment variable configuration
-3. Database connection setup
-4. CORS origin configuration
+### Environment Variables
+
+**Required for Production:**
+```bash
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+```
+
+**Local Development:**
+Create `frontend/.env.local` with the same variables for local testing.
 
 ### Database (Supabase)
-1. Create project
-2. Run migration scripts
+1. Create Supabase project
+2. Run migration scripts (if needed)
 3. Configure RLS policies
-4. Set up storage buckets (for media)
+4. Set up storage buckets (for future media uploads)
+
+### Migration from Express (v0.2 → v0.3)
+
+**What Changed:**
+- ✅ No separate backend deployment needed
+- ✅ Single Vercel deployment handles everything
+- ✅ API routes automatically scale with Vercel
+- ✅ Environment variables managed in Vercel dashboard
+- ✅ No external backend hosting costs
+
+**What Stayed the Same:**
+- ✅ Same Supabase database and schema
+- ✅ Same frontend functionality
+- ✅ Same API endpoints (just different implementation)
+- ✅ Same environment variables (different loading mechanism)
 
 ---
 

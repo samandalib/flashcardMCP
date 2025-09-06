@@ -48,9 +48,7 @@ interface Project {
   updated_at: string;
 }
 
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://your-deployed-backend-url.com' 
-  : 'http://localhost:3001';
+const API_BASE_URL = '/api';
 
 export default function HomePage() {
   const router = useRouter();
@@ -70,7 +68,7 @@ export default function HomePage() {
       setIsLoading(true);
       setError(null);
       
-      const response = await fetch(`${API_BASE_URL}/api/projects`);
+      const response = await fetch(`${API_BASE_URL}/projects`);
       if (!response.ok) {
         throw new Error('Failed to fetch projects');
       }
@@ -87,7 +85,7 @@ export default function HomePage() {
 
   const handleCreateProject = async (projectData: { name: string; description?: string }) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/projects`, {
+      const response = await fetch(`${API_BASE_URL}/projects`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

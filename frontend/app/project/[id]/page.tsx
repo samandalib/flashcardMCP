@@ -51,9 +51,7 @@ interface Project {
   updated_at: string;
 }
 
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://your-deployed-backend-url.com' 
-  : 'http://localhost:3001';
+const API_BASE_URL = '/api';
 
 export default function ProjectDetailPage() {
   const params = useParams();
@@ -82,7 +80,7 @@ export default function ProjectDetailPage() {
       setError(null);
 
       // Fetch project details
-      const projectResponse = await fetch(`${API_BASE_URL}/api/projects/${projectId}`);
+      const projectResponse = await fetch(`${API_BASE_URL}/projects/${projectId}`);
       if (!projectResponse.ok) {
         throw new Error('Project not found');
       }
@@ -90,7 +88,7 @@ export default function ProjectDetailPage() {
       setProject(projectData.project);
 
       // Fetch notes for this project
-      const notesResponse = await fetch(`${API_BASE_URL}/api/projects/${projectId}/notes`);
+      const notesResponse = await fetch(`${API_BASE_URL}/projects/${projectId}/notes`);
       if (notesResponse.ok) {
         const notesData = await notesResponse.json();
         setNotes(notesData.notes || []);
@@ -107,7 +105,7 @@ export default function ProjectDetailPage() {
 
   const handleCreateNote = async (content: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}/notes`, {
+      const response = await fetch(`${API_BASE_URL}/projects/${projectId}/notes`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -135,7 +133,7 @@ export default function ProjectDetailPage() {
 
   const handleUpdateNote = async (noteId: string, content: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/notes/${noteId}`, {
+      const response = await fetch(`${API_BASE_URL}/notes/${noteId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

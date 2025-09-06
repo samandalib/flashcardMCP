@@ -4,6 +4,38 @@ All notable changes to the product requirements and architecture decisions will 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [v0.3] - 2025-01-16
+
+### Added
+- **Next.js API Routes** - Complete serverless backend implementation
+- **Vercel-Only Deployment** - Single platform deployment solution
+- **Serverless Functions** - API endpoints as Next.js serverless functions
+- **Environment Variable Management** - Proper Supabase credential handling
+
+### Changed
+- **Architecture Migration:** From Express.js backend to Next.js API routes
+- **Deployment Strategy:** Single Vercel deployment instead of separate backend service
+- **API Endpoints:** Converted from Express routes to Next.js API routes
+- **Database Schema:** Adapted to existing Supabase schema (removed updated_at dependencies)
+- **Frontend API Calls:** Updated to use local `/api` routes instead of external backend
+
+### Fixed
+- **Production Backend URL Issues** - Resolved ERR_NAME_NOT_RESOLVED errors
+- **Database Column Mismatches** - Fixed API routes to work with existing schema
+- **Environment Variable Loading** - Proper Supabase credential configuration
+- **Double API Path Issues** - Fixed `/api/api/projects` URL construction
+
+### Technical Decisions
+- **Serverless Architecture:** Chose Next.js API routes over Express for Vercel compatibility
+- **Single Platform Deployment:** Eliminated need for separate backend hosting
+- **Schema Adaptation:** Modified API to work with existing database structure
+- **Environment Strategy:** Used Next.js environment variable system
+
+### Removed
+- **Express Backend Dependency** - No longer needed for production
+- **External Backend URLs** - All API calls now use local routes
+- **Separate Backend Deployment** - Consolidated into single Vercel deployment
+
 ## [v0.2] - 2025-01-16
 
 ### Added

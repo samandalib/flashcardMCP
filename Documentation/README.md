@@ -21,7 +21,7 @@ This folder contains all product documentation, requirements, and architectural 
 - [Original PRD (v0)](./PRD/v0-original.md) - Initial flashcard concept
 - [Previous PRD (v0.1)](./PRD/current.md) - Intermediate version
 
-## Current Status (v0.2 - January 16, 2025)
+## Current Status (v0.3 - January 16, 2025)
 
 ### ✅ Implemented Features
 - **Apple Notes-style Rich Text Editor** - contentEditable with formatting toolbar
@@ -30,6 +30,8 @@ This folder contains all product documentation, requirements, and architectural 
 - **Auto-save Functionality** - Debounced content persistence
 - **Responsive Design** - Mobile-friendly interface
 - **Complete CRUD Operations** - Projects and notes management
+- **Serverless Architecture** - Next.js API routes on Vercel
+- **Single Platform Deployment** - Everything runs on Vercel
 
 ### 🔄 In Progress
 - Media upload functionality (UI complete, backend integration pending)
@@ -41,6 +43,12 @@ This folder contains all product documentation, requirements, and architectural 
 - Export capabilities (PDF, markdown, JSON)
 - Advanced search and filtering
 - Collaboration features
+
+### 🆕 v0.3 Key Changes
+- **Migrated to Serverless** - From Express backend to Next.js API routes
+- **Vercel-Only Deployment** - Single platform for frontend and backend
+- **Simplified Architecture** - No external backend hosting needed
+- **Better Integration** - Native Next.js serverless functions
 
 ## Contributing to Documentation
 

@@ -33,26 +33,35 @@
 
 **Initial Plan:** Migrate to Next.js API Routes for full-stack approach
 
-**Actual Decision:** Keep Express.js backend
+**First Decision:** Keep Express.js backend (v0.2)
 
-**Rationale for Change:**
-- Express backend was already implemented and working
-- Focused development effort on core features rather than migration
-- Express provides more flexibility for complex API logic
-- Easier to scale backend independently
-- Team familiarity with Express patterns
+**Final Decision:** Migrate to Next.js API Routes (v0.3)
+
+**Rationale for Final Change:**
+- User preference for Vercel-only deployment
+- Simplified deployment and maintenance
+- Better integration with Next.js ecosystem
+- Eliminated external backend hosting costs
+- Single platform for frontend and backend
+
+**Migration Process:**
+- Converted Express routes to Next.js API routes
+- Updated frontend API calls to use local `/api` endpoints
+- Adapted to existing Supabase schema
+- Maintained all existing functionality
 
 **Trade-offs:**
-- ✅ More flexibility for complex backend operations
-- ✅ Independent backend scaling
-- ✅ No migration risks or downtime
-- ✅ Better separation of concerns
-- ❌ Two codebases to maintain
-- ❌ Separate deployment processes
-- ❌ No shared TypeScript types (yet)
+- ✅ Single deployment platform (Vercel)
+- ✅ Simplified architecture and maintenance
+- ✅ Better Next.js integration
+- ✅ Reduced hosting costs
+- ✅ Shared TypeScript types
+- ❌ Less flexibility for complex backend logic
+- ❌ Serverless function limitations
+- ❌ Cold start latency
 
 **Date:** January 16, 2025  
-**Status:** Implemented and Confirmed  
+**Status:** Migrated and Implemented  
 
 ### Decision 2: Supabase vs Self-hosted PostgreSQL
 
@@ -180,6 +189,53 @@
 
 **Date:** January 16, 2025  
 **Status:** Implemented
+
+### Decision 7: Serverless Migration Strategy
+
+**Decision:** Migrate from Express backend to Next.js API routes
+
+**Migration Approach:**
+- **Route-by-Route Conversion:** Converted each Express endpoint to Next.js API route
+- **Schema Adaptation:** Modified API to work with existing Supabase schema
+- **Environment Variables:** Used Next.js environment variable system
+- **Error Handling:** Maintained comprehensive error handling and validation
+
+**API Route Structure:**
+```
+frontend/app/api/
+├── projects/
+│   ├── route.ts              # GET, POST /api/projects
+│   └── [id]/
+│       ├── route.ts          # GET /api/projects/[id]
+│       └── notes/
+│           └── route.ts      # GET, POST /api/projects/[id]/notes
+└── notes/
+    └── [id]/
+        └── route.ts          # PUT, DELETE /api/notes/[id]
+```
+
+**Key Migration Changes:**
+- **Request/Response:** Express req/res → NextRequest/NextResponse
+- **Route Handlers:** Express app.get/post → export async function GET/POST
+- **Error Handling:** Express error middleware → try/catch with NextResponse
+- **Environment:** process.env → Next.js environment variable system
+- **Database:** Same Supabase client, adapted schema queries
+
+**Benefits Realized:**
+- ✅ Single Vercel deployment
+- ✅ No external backend hosting needed
+- ✅ Simplified development workflow
+- ✅ Better TypeScript integration
+- ✅ Automatic scaling with Vercel
+
+**Challenges Addressed:**
+- **Schema Mismatch:** Adapted API to existing database structure
+- **Environment Variables:** Proper Next.js environment configuration
+- **URL Construction:** Fixed double `/api` path issues
+- **Error Handling:** Maintained comprehensive error responses
+
+**Date:** January 16, 2025  
+**Status:** Successfully Migrated
 
 ---
 
