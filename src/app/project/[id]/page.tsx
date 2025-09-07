@@ -68,6 +68,17 @@ export default function ProjectDetailPage() {
       setIsLoading(true);
       setError(null);
 
+      // Fetch project details
+      const projectResponse = await fetch(`/api/projects/${projectId}`);
+      if (!projectResponse.ok) {
+        if (projectResponse.status === 404) {
+          throw new Error('Project not found');
+        }
+        throw new Error('Failed to fetch project');
+      }
+      const projectData = await projectResponse.json();
+      setProject(projectData.project);
+
       // Fetch notes for this project
       const notesResponse = await fetch(`/api/projects/${projectId}/notes`);
       if (notesResponse.ok) {
@@ -76,16 +87,6 @@ export default function ProjectDetailPage() {
       } else {
         setNotes([]);
       }
-
-      // For now, we'll create a mock project object
-      // In a real app, you'd fetch this from the API
-      setProject({
-        id: projectId,
-        name: `Project ${projectId}`,
-        description: 'Research project',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      });
     } catch (err) {
       console.error('Error fetching project data:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');
