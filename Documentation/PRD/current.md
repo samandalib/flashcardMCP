@@ -1,213 +1,309 @@
-# PRD — Flashcard Research Synthesizer (v0.1)
+# PRD — Flashcard Research Synthesizer (v1.0)
 
-**Version:** v0.1 (Revised)  
+**Version:** v1.0 (Clean Serverless Architecture)  
 **Date:** January 2025  
 **Status:** Current Working Document  
-**Previous Version:** [v0 Original](./v0-original.md)
+**Previous Version:** [v0.1](./v0.1-current.md)
 
-## Changes from v0
-- **Technical Stack:** Revised from Express backend to Next.js full-stack approach
-- **Architecture:** Single codebase deployment instead of separate frontend/backend services
+## Changes from v0.1
+- **Architecture:** Complete rewrite with clean serverless architecture
+- **Technical Stack:** Next.js 15 with API routes, Radix UI components
+- **Database:** Direct Supabase integration via Next.js API routes
+- **Deployment:** Single Vercel deployment (no separate backend)
 
 ---
 
 ## 1. Overview
 
-A lightweight application for capturing research findings as cards, organizing them into projects, and invoking ChatGPT (via MCP) to synthesize the findings into structured narratives with citations.
+A modern, serverless web application for creating and managing research projects with AI-powered flashcard generation. Built with Next.js 15, TypeScript, Tailwind CSS, and Supabase.
 
-This PRD covers the first iteration (MVP) of the product.
+The application provides a clean, intuitive interface for researchers to organize their findings and prepare them for AI synthesis.
 
 ---
 
 ## 2. Goals
-- Provide a simple way to capture and edit research findings.
-- Allow attaching unlimited references and media to each card.
-- Organize cards under projects.
-- Offer a one-click path to send project findings into ChatGPT for synthesis.
+- Provide a simple way to capture and edit research findings
+- Allow organizing findings into projects
+- Offer a clean, modern user interface
+- Support multiple languages (English/Farsi)
+- Enable seamless AI integration for synthesis
 
 ---
 
 ## 3. Core User Stories
-1. **Create a project:** As a user, I can create a project to group related research cards.
-2. **Add a finding card:** As a user, I can add cards with:
-   - Freeform text (finding/insight)
-   - References (link or structured metadata)
-   - Media attachments (PDF, images, video, audio)
-3. **Edit cards:** As a user, I can edit any card's text, reference, or attachments.
-4. **Unlimited content:** As a user, I can add any amount of text and media without artificial limits.
-5. **Synthesize project:** As a user, I can click a CTA to open/sync the project in ChatGPT for synthesis into a narrative.
+1. **Create a project:** As a user, I can create a project to group related research findings.
+2. **Add research notes:** As a user, I can add notes with:
+   - Rich text content
+   - Structured metadata
+   - Unlimited text content
+3. **Edit notes:** As a user, I can edit any note's content and metadata.
+4. **Organize content:** As a user, I can organize notes within projects.
+5. **Language support:** As a user, I can switch between English and Farsi interfaces.
 
 ---
 
 ## 4. Scope (MVP)
 
-### In-Scope
-- Project CRUD
-- Card CRUD (text, reference, media upload/link)
-- Unlimited content per card (using object storage for media)
-- CTA → ChatGPT integration
-- If MCP is connected: trigger synthesize(projectId) tool
-- Else: export JSONL + copy prompt to clipboard
+### In-Scope ✅ IMPLEMENTED
+- Project CRUD operations
+- Note CRUD operations (text content)
+- Rich text editing with auto-save
+- Project organization
+- Internationalization (English/Farsi)
+- RTL support for Farsi
+- Clean, modern UI with Tailwind CSS
+- TypeScript type safety
+- Serverless deployment
 
 ### Out-of-Scope (Future)
+- Media attachments
+- MCP integration
+- AI synthesis features
 - Spaced repetition
-- Advanced outlines
-- Contradiction detection
 - Team collaboration
-- Rich citation styling
-- Semantic search/graph view
+- Advanced search
+- Export functionality
 
 ---
 
 ## 5. Data Model
 
 ### Projects
-- id
-- name
-- created_at
+```typescript
+interface Project {
+  id: string
+  name: string
+  description?: string
+  created_at: string
+  updated_at: string
+}
+```
 
-### Cards
-- id
-- project_id
-- body (TEXT)
-- reference (JSONB)
-- created_at, updated_at
-
-### Attachments
-- id
-- card_id
-- type (image | video | pdf | web | audio)
-- url
-- meta
-
-### Syntheses (optional)
-- id
-- project_id
-- markdown
-- bibliography
-- created_at
+### Notes
+```typescript
+interface Note {
+  id: string
+  project_id: string
+  title: string
+  content: string
+  created_at: string
+  updated_at: string
+}
+```
 
 ---
 
 ## 6. Key Flows
 
-### Card Creation
-1. User selects project.
-2. Clicks New Card.
-3. Enters text, reference, and uploads or links media.
-4. Saves → card appears in project list.
+### Project Creation
+1. User clicks "Create New Project"
+2. Enters project name and description
+3. Project is created and appears in the list
 
-### Editing a Card
-- Inline edit or open drawer → update fields → save.
+### Note Creation
+1. User selects a project
+2. Clicks "New Note"
+3. Enters note title and content
+4. Note is auto-saved and appears in the sidebar
 
-### Synthesis
-- User clicks Synthesize Findings.
-- If MCP available: call tool synthesize(projectId).
-- Else: export JSONL + pre-filled ChatGPT prompt.
+### Note Editing
+1. User clicks on a note in the sidebar
+2. Note content loads in the editor
+3. User makes changes
+4. Changes are auto-saved
 
----
-
-## 7. MCP Server (Integration)
-
-### Resources
-- mcp://projects/:id → project + card IDs
-- mcp://cards/:id → card data (body, reference, attachments)
-
-### Tools
-- synthesize(projectId, citationStyle, stylePreset) → { markdown, bibliography, toc, gaps }
+### Language Switching
+1. User clicks language switcher
+2. Interface switches between English/Farsi
+3. Text direction changes (LTR/RTL)
+4. Preference is saved to localStorage
 
 ---
 
-## 8. UI (Next.js + Tailwind + shadcn/ui + i18n)
-- Projects list (left nav)
-- Card list (main panel)
-- Card = body + reference + media chips
-- New/Edit Card modal
-- Top-right CTA → Synthesize
-- Connected → runs tool
-- Not connected → export & copy prompt
-- **Language switcher** (English/Farsi)
-- **RTL support** for Farsi interface
+## 7. Technical Implementation (CURRENT)
+
+### Architecture
+- **Framework:** Next.js 15 (App Router)
+- **Language:** TypeScript (strict mode)
+- **Styling:** Tailwind CSS v4
+- **UI Components:** Radix UI + Custom components
+- **Database:** Supabase (PostgreSQL)
+- **Deployment:** Vercel (serverless)
+
+### Key Features
+- **Serverless API Routes:** Next.js API routes for all backend operations
+- **Type Safety:** End-to-end TypeScript support
+- **Internationalization:** Custom React Context for i18n
+- **Rich Text Editor:** Custom contentEditable implementation
+- **Auto-save:** Debounced auto-save functionality
+- **Responsive Design:** Mobile-first responsive design
+
+### File Structure
+```
+src/
+├── app/                    # Next.js App Router
+│   ├── api/               # API routes
+│   ├── project/[id]/     # Project pages
+│   ├── layout.tsx        # Root layout
+│   └── page.tsx          # Home page
+├── components/            # React components
+│   ├── ui/               # UI primitives
+│   └── ...               # Feature components
+└── lib/                  # Utilities
+    ├── supabase.ts       # Database client
+    └── utils.ts          # Helper functions
+```
 
 ---
 
-## 9. Technical Implementation (REVISED)
+## 8. UI/UX Design
 
-### Frontend & Backend
-- **Framework:** Next.js 15 (App Router) with TypeScript
-- **Styling:** Tailwind CSS v4 + shadcn/ui components
-- **Internationalization:** next-intl for English/Farsi support
-- **RTL Support:** Right-to-left layout for Farsi
-- **Backend:** Next.js API Routes (full-stack approach)
-- **Database:** Supabase (PostgreSQL + Storage)
-- **File Storage:** Supabase Storage with pre-signed URLs
+### Design Principles
+- **Simplicity:** Clean, uncluttered interface
+- **Accessibility:** WCAG compliant components
+- **Responsiveness:** Works on all device sizes
+- **Internationalization:** Full RTL/LTR support
+- **Performance:** Fast loading and smooth interactions
 
-### MCP Integration
-- **MCP Server:** Separate Node.js service using @modelcontextprotocol/sdk
-- **Communication:** HTTP API between Next.js app and MCP server
-- **LLM:** OpenAI GPT with JSON output mode for synthesis
-
-### Deployment
-- **Main App:** Vercel (Next.js + API routes)
-- **MCP Server:** Railway/Render (separate service)
-- **Database:** Supabase Cloud
+### Key Components
+- **Project List:** Grid layout with project cards
+- **Note Sidebar:** List of notes with creation date
+- **Rich Text Editor:** Apple Notes-style editor
+- **Language Switcher:** Toggle between English/Farsi
+- **Create Dialogs:** Modal dialogs for project/note creation
 
 ---
 
-## 10. Constraints
-- No artificial size limits, but storage quota and upload size may be constrained by Supabase plan.
-- Citation fidelity depends on cards containing clean references.
+## 9. API Design
+
+### RESTful Endpoints
+```
+GET    /api/projects              # List projects
+POST   /api/projects              # Create project
+GET    /api/projects/[id]/notes   # List project notes
+POST   /api/projects/[id]/notes   # Create note
+PUT    /api/notes/[id]            # Update note
+DELETE /api/notes/[id]            # Delete note
+```
+
+### Error Handling
+- Consistent error response format
+- Proper HTTP status codes
+- Input validation on all endpoints
+- Type-safe error handling
 
 ---
 
-## 11. Success Metrics
-- **Usability:** Can a user capture 10–20 cards with mixed media in under 5 minutes?
-- **Reliability:** Synthesis tool returns valid JSON >95% of attempts.
-- **Adoption:** At least 1 complete project (10+ cards) synthesized by each early tester.
+## 10. Database Schema
+
+### Projects Table
+```sql
+CREATE TABLE projects (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  description TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+```
+
+### Notes Table
+```sql
+CREATE TABLE notes (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  title VARCHAR(200) NOT NULL,
+  content TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_notes_project_id ON notes(project_id);
+CREATE INDEX idx_notes_updated_at ON notes(updated_at DESC);
+```
 
 ---
 
-## 12. Future Enhancements
-- Spaced repetition learning
-- Semantic/embedding search
-- Contradiction detection
-- Team sharing + permissions
-- Advanced outlines and chaptering
-- Rich citation rendering (APA, MLA, numeric)
-- Graph view of supports/contradicts
+## 11. Constraints
+- **Storage:** Supabase free tier limits
+- **Performance:** Vercel function execution limits
+- **Browser Support:** Modern browsers only
+- **Content:** HTML content requires sanitization (future)
 
 ---
 
-## 13. Timeline (MVP) - REVISED
-
-### Week 1: Next.js Full-Stack Foundation + i18n
-- Remove Express backend, consolidate into Next.js
-- Set up Supabase + basic schema
-- Configure next-intl for English/Farsi support
-- Implement API routes for Projects CRUD
-- Basic project list UI with shadcn/ui + RTL support
-
-### Week 2: Cards & Media
-- Cards CRUD API routes
-- File upload API route → Supabase Storage  
-- Card creation/editing UI
-- Media attachment handling
-
-### Week 3: MCP Server
-- Separate Node.js MCP server
-- Implement synthesize tool
-- Next.js API route to communicate with MCP server
-- Synthesis UI integration
-
-### Week 4: Polish & Deploy
-- Export fallback when MCP unavailable
-- UI polish and error handling
-- Deploy to Vercel + MCP server to Railway/Render
+## 12. Success Metrics
+- **Usability:** Users can create projects and notes without confusion
+- **Performance:** Page loads under 2 seconds
+- **Reliability:** 99%+ uptime on Vercel
+- **Accessibility:** WCAG AA compliance
+- **Internationalization:** Seamless language switching
 
 ---
 
-## Definition of Done (MVP)
-- Create/edit unlimited cards under projects
-- Cards support text, reference, media
-- Synthesis CTA works (MCP + fallback)
-- Single Next.js app deployable on Vercel + separate MCP server
+## 13. Future Enhancements
+
+### Phase 2: Media & AI Integration
+- File upload and storage
+- MCP server integration
+- AI synthesis features
+- Export functionality
+
+### Phase 3: Advanced Features
+- Team collaboration
+- Advanced search
+- Spaced repetition
+- Analytics dashboard
+
+### Phase 4: Enterprise Features
+- Multi-tenancy
+- Advanced permissions
+- API access
+- Custom integrations
+
+---
+
+## 14. Timeline (COMPLETED)
+
+### ✅ Week 1: Clean Architecture Setup
+- Complete rewrite with Next.js 15
+- Supabase integration
+- TypeScript configuration
+- Basic UI components
+
+### ✅ Week 2: Core Features
+- Project CRUD operations
+- Note CRUD operations
+- Rich text editor
+- Auto-save functionality
+
+### ✅ Week 3: Polish & Deploy
+- Internationalization
+- RTL support
+- UI polish
+- Error handling
+- Vercel deployment
+
+---
+
+## Definition of Done (MVP) ✅ ACHIEVED
+
+- ✅ Create/edit projects with name and description
+- ✅ Create/edit notes with rich text content
+- ✅ Auto-save functionality
+- ✅ Internationalization (English/Farsi)
+- ✅ RTL support for Farsi
+- ✅ Responsive design
+- ✅ TypeScript type safety
+- ✅ Serverless deployment on Vercel
+- ✅ Clean, modern UI
+- ✅ Error handling and validation
+
+---
+
+## Current Status
+
+**Status:** ✅ MVP Complete  
+**Deployment:** Live on Vercel  
+**Architecture:** Clean serverless architecture  
+**Next Phase:** Media attachments and AI integration

@@ -2,98 +2,103 @@
 
 **Last Updated:** January 16, 2025
 
-## Current Stack (Implemented)
+## Current Stack (Clean Serverless Architecture)
 
-### Frontend
-- **Next.js 15** (App Router)
-- **TypeScript** 
-- **Tailwind CSS v4**
-- **shadcn/ui** (component library)
+### Frontend & Backend (Full-Stack Next.js)
+- **Next.js 15** (App Router with API Routes)
+- **TypeScript** (strict mode)
+- **Tailwind CSS v4** (utility-first styling)
+- **Radix UI** (accessible component primitives)
+- **Custom UI Components** (built on Radix primitives)
 - **React Context** (for i18n and state management)
 
-### Backend  
-- **Express.js** (RESTful API server)
-- **Node.js** (runtime environment)
+### Database & Storage
 - **Supabase** (PostgreSQL database + Storage)
+- **Direct Integration** (no separate backend server)
 
 ### MCP Integration (Planned)
 - **Separate Node.js service** using @modelcontextprotocol/sdk
-- **Communication:** HTTP API between Express and MCP server
+- **Communication:** HTTP API between Next.js API routes and MCP server
 
 ### Deployment
-- **Frontend:** Vercel
-- **Backend:** To be determined (Railway/Render/VPS)
+- **Full Application:** Vercel (serverless deployment)
 - **Database:** Supabase Cloud
+- **MCP Server:** To be determined (Railway/Render/VPS)
 
 ---
 
 ## Key Architectural Decisions
 
-### Decision 1: Express Backend vs Next.js API Routes
+### Decision 1: Serverless Architecture Migration ✅ COMPLETED
 
-**Initial Plan:** Migrate to Next.js API Routes for full-stack approach
+**Previous Plan:** Express.js backend with separate frontend
+**New Decision:** Full Next.js serverless architecture
 
-**Actual Decision:** Keep Express.js backend
-
-**Rationale for Change:**
-- Express backend was already implemented and working
-- Focused development effort on core features rather than migration
-- Express provides more flexibility for complex API logic
-- Easier to scale backend independently
-- Team familiarity with Express patterns
+**Rationale for Migration:**
+- **Simplified Architecture**: Single codebase for frontend and backend
+- **Better Performance**: Serverless functions scale automatically
+- **Cost Efficiency**: Pay only for actual usage
+- **Deployment Simplicity**: Single Vercel deployment
+- **Type Safety**: Shared TypeScript types between frontend and API
+- **Modern Best Practices**: Aligns with current web development trends
 
 **Trade-offs:**
-- ✅ More flexibility for complex backend operations
-- ✅ Independent backend scaling
-- ✅ No migration risks or downtime
-- ✅ Better separation of concerns
-- ❌ Two codebases to maintain
-- ❌ Separate deployment processes
-- ❌ No shared TypeScript types (yet)
+- ✅ Single codebase to maintain
+- ✅ Automatic scaling and performance
+- ✅ Shared TypeScript types
+- ✅ Simplified deployment process
+- ✅ Better developer experience
+- ✅ Cost-effective for variable traffic
+- ❌ Less control over server environment
+- ❌ Cold start latency for API routes
+- ❌ Function execution time limits
 
 **Date:** January 16, 2025  
-**Status:** Implemented and Confirmed  
+**Status:** ✅ Migrated and Implemented
 
-### Decision 2: Supabase vs Self-hosted PostgreSQL
+### Decision 2: Supabase Integration Strategy
 
-**Decision:** Use Supabase for database and file storage
+**Decision:** Direct Supabase integration via Next.js API routes
 
 **Rationale:**
-- Built-in file storage with CDN
-- Real-time subscriptions (future feature)
-- Automatic backups and scaling
-- Strong Next.js integration
-- Row Level Security for future multi-tenancy
+- **Built-in Security**: Row Level Security policies
+- **Real-time Capabilities**: Future real-time features ready
+- **File Storage**: Integrated storage for media uploads
+- **Type Generation**: Automatic TypeScript types from schema
+- **Edge Functions**: Can leverage Supabase Edge Functions if needed
 
 **Trade-offs:**
 - ✅ Fast development velocity
-- ✅ Built-in storage + auth
-- ✅ Generous free tier
+- ✅ Built-in auth and storage
+- ✅ Real-time subscriptions ready
+- ✅ Automatic type generation
 - ❌ Vendor lock-in
 - ❌ Less control over database configuration
 
 **Date:** January 2025  
-**Status:** Decided  
+**Status:** ✅ Implemented
 
-### Decision 3: Separate MCP Server vs Integrated
+### Decision 3: UI Component Architecture
 
-**Decision:** Run MCP server as separate Node.js service
+**Decision:** Custom components built on Radix UI primitives
 
 **Rationale:**
-- MCP protocol requires persistent connection
-- Next.js API routes are stateless
-- Better separation of concerns
-- Can scale MCP server independently
+- **Accessibility**: Radix provides accessible primitives out of the box
+- **Customization**: Full control over styling and behavior
+- **Bundle Size**: Only include components we actually use
+- **Design System**: Consistent design language across the app
+- **TypeScript**: Full type safety for all components
 
 **Trade-offs:**
-- ✅ Proper MCP protocol implementation
-- ✅ Independent scaling
-- ✅ Better error isolation
-- ❌ Additional service to deploy
-- ❌ Network latency between services
+- ✅ Excellent accessibility
+- ✅ Complete design control
+- ✅ Optimized bundle size
+- ✅ Consistent API across components
+- ❌ More development effort than pre-built libraries
+- ❌ Need to maintain custom components
 
-**Date:** January 2025  
-**Status:** Decided  
+**Date:** January 16, 2025  
+**Status:** ✅ Implemented
 
 ### Decision 4: Rich Text Editor Implementation
 
@@ -106,11 +111,11 @@
 **Decision:** Custom contentEditable implementation with toolbar
 
 **Rationale:**
-- Apple Notes-style simplicity and performance
-- Full control over formatting and behavior
-- Lighter weight than full editor frameworks
-- Better integration with React ecosystem
-- Easier to implement bilingual text direction
+- **Simplicity**: Apple Notes-style simplicity and performance
+- **Control**: Full control over formatting and behavior
+- **Performance**: Lighter weight than full editor frameworks
+- **Integration**: Better integration with React ecosystem
+- **i18n Support**: Easier to implement bilingual text direction
 
 **Trade-offs:**
 - ✅ Lightweight and fast
@@ -122,7 +127,7 @@
 - ❌ Manual handling of edge cases
 
 **Date:** January 16, 2025  
-**Status:** Implemented
+**Status:** ✅ Implemented
 
 ### Decision 5: Internationalization Approach
 
@@ -134,11 +139,10 @@
 **Decision:** Custom React Context with localStorage persistence
 
 **Rationale:**
-- Only two languages (English/Farsi) needed
-- Simple toggle-based switching vs route-based locales
-- Better control over text direction changes
-- Avoided hydration issues with next-intl
-- Simpler implementation for MVP
+- **Simplicity**: Only two languages (English/Farsi) needed
+- **Control**: Better control over text direction changes
+- **Performance**: Avoided hydration issues with next-intl
+- **MVP Focus**: Simpler implementation for initial version
 
 **Trade-offs:**
 - ✅ Simple and lightweight
@@ -150,7 +154,7 @@
 - ❌ No advanced i18n features (pluralization, etc.)
 
 **Date:** January 16, 2025  
-**Status:** Implemented
+**Status:** ✅ Implemented
 
 ### Decision 6: Content Storage Format
 
@@ -163,11 +167,11 @@
 **Decision:** HTML content storage in TEXT database fields
 
 **Rationale:**
-- Direct compatibility with contentEditable
-- Preserves all formatting information
-- Easy to render without parsing
-- Supports media embeds and complex layouts
-- Standard format for rich content
+- **Compatibility**: Direct compatibility with contentEditable
+- **Preservation**: Preserves all formatting information
+- **Rendering**: Easy to render without parsing
+- **Media Support**: Supports media embeds and complex layouts
+- **Standard**: Standard format for rich content
 
 **Trade-offs:**
 - ✅ Full formatting preservation
@@ -179,19 +183,75 @@
 - ❌ Less portable than structured formats
 
 **Date:** January 16, 2025  
-**Status:** Implemented
+**Status:** ✅ Implemented
+
+### Decision 7: API Route Architecture
+
+**Decision:** RESTful API routes following Next.js conventions
+
+**Structure:**
+```
+/api/projects          - Project management
+/api/projects/[id]/notes - Project-specific notes
+/api/notes/[id]        - Individual note operations
+```
+
+**Rationale:**
+- **Conventions**: Follows Next.js App Router conventions
+- **RESTful**: Clear, predictable API structure
+- **Type Safety**: Full TypeScript support
+- **Error Handling**: Consistent error responses
+- **Validation**: Input validation on all endpoints
+
+**Trade-offs:**
+- ✅ Clear API structure
+- ✅ Type-safe endpoints
+- ✅ Consistent error handling
+- ✅ Easy to test and debug
+- ❌ More files to maintain
+- ❌ Potential code duplication
+
+**Date:** January 16, 2025  
+**Status:** ✅ Implemented
+
+---
+
+## Architecture Benefits
+
+### Serverless Advantages
+1. **Automatic Scaling**: Functions scale based on demand
+2. **Cost Efficiency**: Pay only for actual usage
+3. **Zero Maintenance**: No server management required
+4. **Global Distribution**: Edge functions for better performance
+5. **Built-in Security**: Vercel handles security updates
+
+### Development Experience
+1. **Single Codebase**: Frontend and backend in one repository
+2. **Shared Types**: TypeScript types shared between frontend and API
+3. **Hot Reloading**: Full-stack hot reloading in development
+4. **Type Safety**: End-to-end type safety
+5. **Simplified Deployment**: Single command deployment
 
 ---
 
 ## Future Considerations
 
-### Potential Changes
-1. **Database:** Consider moving to Neon or PlanetScale if Supabase limitations arise
-2. **MCP Server:** Could explore serverless functions if connection requirements change
-3. **Frontend:** May add React Query for better state management as app grows
-4. **Authentication:** Currently not needed, but Supabase Auth ready when required
+### Potential Enhancements
+1. **Authentication**: Supabase Auth integration when needed
+2. **Real-time Features**: Supabase real-time subscriptions
+3. **File Uploads**: Supabase Storage for media files
+4. **Caching**: Redis for API response caching
+5. **Monitoring**: Vercel Analytics and error tracking
 
 ### Monitoring Points
-- Next.js API route performance under load
-- Supabase storage costs as media uploads scale
-- MCP server reliability and connection handling
+- API route performance and cold starts
+- Supabase query performance and costs
+- Bundle size optimization
+- TypeScript compilation times
+- Vercel function execution limits
+
+### Migration Considerations
+- **Database**: Could migrate to PlanetScale if needed
+- **Storage**: Could use Vercel Blob or AWS S3
+- **MCP Server**: Will remain separate service
+- **Authentication**: Supabase Auth ready for integration

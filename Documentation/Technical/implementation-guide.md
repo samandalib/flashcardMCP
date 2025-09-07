@@ -1,27 +1,40 @@
-# Implementation Guide - Research Note Synthesizer
+# Implementation Guide - Flashcard Research Synthesizer
 
-**Version:** v0.2  
+**Version:** v1.0 (Clean Serverless Architecture)  
 **Last Updated:** January 16, 2025  
 **Audience:** Developers, Technical Contributors
 
 ## Overview
 
-This guide documents the technical implementation details, key components, and development patterns used in the Research Note Synthesizer application.
+This guide documents the technical implementation details, key components, and development patterns used in the Flashcard Research Synthesizer application. The application has been completely rewritten with a clean serverless architecture using Next.js 15.
 
 ---
 
 ## Architecture Overview
 
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Frontend      │    │   Backend       │    │   Database      │
-│   (Next.js)     │◄──►│   (Express)     │◄──►│   (Supabase)    │
-│                 │    │                 │    │                 │
-│ • React         │    │ • Node.js       │    │ • PostgreSQL    │
-│ • TypeScript    │    │ • RESTful API   │    │ • File Storage  │
-│ • Tailwind      │    │ • CORS enabled  │    │ • Row Level     │
-│ • shadcn/ui     │    │ • Input validation│    │   Security      │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│                Next.js 15 Application                   │
+│                                                         │
+│  ┌─────────────────┐    ┌─────────────────┐           │
+│  │   Frontend      │    │   API Routes    │           │
+│  │   (React)       │◄──►│   (Serverless)  │◄─────────►│
+│  │                 │    │                 │           │
+│  │ • TypeScript    │    │ • TypeScript    │           │
+│  │ • Tailwind CSS  │    │ • Input Validation│         │
+│  │ • Radix UI      │    │ • Error Handling│           │
+│  │ • i18n Support  │    │ • Type Safety   │           │
+│  └─────────────────┘    └─────────────────┘           │
+│                                                         │
+│  ┌─────────────────────────────────────────────────────┐│
+│  │              Supabase Integration                   ││
+│  │                                                     ││
+│  │ • PostgreSQL Database                               ││
+│  │ • Row Level Security                                ││
+│  │ • File Storage (Future)                             ││
+│  │ • Real-time Subscriptions (Future)                 ││
+│  └─────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -43,32 +56,34 @@ This guide documents the technical implementation details, key components, and d
 ```typescript
 // Core structure
 const RichTextEditor = ({ onSave, initialContent, placeholder }) => {
-  const editorRef = useRef<HTMLDivElement>(null);
+  const { locale, dir } = useLocale();
   const [content, setContent] = useState(initialContent);
   const [isSaving, setIsSaving] = useState(false);
-  
+  const [hasChanges, setHasChanges] = useState(false);
+
   // Direction handling
   const editorDirection = locale === 'fa' ? 'rtl' : 'ltr';
   
   // Auto-save with debouncing
   const handleSave = useCallback(async () => {
-    if (isDirty && content) {
-      setIsSaving(true);
+    if (!hasChanges) return;
+    
+    setIsSaving(true);
+    try {
       await onSave(content);
+      setHasChanges(false);
+    } catch (error) {
+      console.error('Error saving content:', error);
+    } finally {
       setIsSaving(false);
-      setLastSaved(new Date());
-      setIsDirty(false);
     }
-  }, [isDirty, content, onSave]);
+  }, [hasChanges, content, onSave]);
   
   // Content editing
-  const handleInput = useCallback(() => {
-    if (editorRef.current && !isComposing) {
-      const newContent = editorRef.current.innerHTML;
-      setContent(newContent);
-      setIsDirty(true);
-    }
-  }, [isComposing]);
+  const handleContentChange = (value: string) => {
+    setContent(value);
+    setHasChanges(value !== initialContent);
+  };
 };
 ```
 
@@ -142,9 +157,41 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
 }
 ```
 
+### 4. Supabase Integration (`lib/supabase.ts`)
+
+**Purpose:** Centralized database client and type definitions
+
+**Implementation:**
+```typescript
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
+export const supabase = createClient(supabaseUrl, supabaseKey)
+
+// Database types
+export interface Project {
+  id: string
+  name: string
+  description?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface Note {
+  id: string
+  project_id: string
+  title: string
+  content: string
+  created_at: string
+  updated_at: string
+}
+```
+
 ---
 
-## Backend API Design
+## API Routes Architecture
 
 ### RESTful Endpoints
 
@@ -152,69 +199,97 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
 ```
 GET    /api/projects          # List all projects
 POST   /api/projects          # Create new project
-GET    /api/projects/:id      # Get project details
 ```
 
 **Notes:**
 ```
-GET    /api/projects/:id/notes    # List project notes
-POST   /api/projects/:id/notes    # Create new note
-PUT    /api/notes/:id             # Update existing note
-DELETE /api/notes/:id             # Delete note
+GET    /api/projects/[id]/notes    # List project notes
+POST   /api/projects/[id]/notes    # Create new note
+PUT    /api/notes/[id]             # Update existing note
+DELETE /api/notes/[id]             # Delete note
 ```
 
-### Input Validation Example
+### API Route Implementation Example
 
-```javascript
-// Note creation validation
-app.post('/api/projects/:id/notes', async (req, res) => {
+```typescript
+// /api/projects/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { supabase } from '@/lib/supabase';
+
+// GET /api/projects - List all projects
+export async function GET() {
   try {
-    const { id } = req.params;
-    const { title, content } = req.body;
+    const { data, error } = await supabase
+      .from('projects')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Supabase error:', error);
+      return NextResponse.json({ error: 'Failed to fetch projects' }, { status: 500 });
+    }
+
+    return NextResponse.json({ projects: data || [] });
+  } catch (error) {
+    console.error('Unexpected error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+// POST /api/projects - Create a new project
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { name, description } = body;
 
     // Validate input
-    if (!title || typeof title !== 'string' || title.trim().length < 1) {
-      return res.status(400).json({
-        error: 'Title is required'
-      });
+    if (!name || typeof name !== 'string' || name.trim().length < 1) {
+      return NextResponse.json({
+        error: 'Project name is required and must be a non-empty string'
+      }, { status: 400 });
     }
 
-    if (!content || typeof content !== 'string') {
-      return res.status(400).json({
-        error: 'Content is required'
-      });
+    if (name.trim().length > 100) {
+      return NextResponse.json({
+        error: 'Project name must be less than 100 characters'
+      }, { status: 400 });
     }
 
-    if (title.trim().length > 200) {
-      return res.status(400).json({
-        error: 'Title must be less than 200 characters'
-      });
-    }
-
-    // Database operation
     const { data, error } = await supabase
-      .from('notes')
-      .insert([{
-        project_id: id,
-        title: title.trim(),
-        content: content,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }])
+      .from('projects')
+      .insert({
+        name: name.trim(),
+        description: description?.trim() || null
+      })
       .select()
       .single();
 
     if (error) {
-      console.error('Error creating note:', error);
-      return res.status(500).json({ error: 'Failed to create note' });
+      console.error('Supabase error:', error);
+      return NextResponse.json({ error: 'Failed to create project' }, { status: 500 });
     }
 
-    res.status(201).json({ note: data });
+    return NextResponse.json({ project: data }, { status: 201 });
   } catch (error) {
     console.error('Unexpected error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-});
+}
+```
+
+### Next.js 15 Compatibility
+
+**Important:** All API routes use the new Next.js 15 parameter handling:
+
+```typescript
+// Correct for Next.js 15
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params; // Must await params
+  // ... rest of implementation
+}
 ```
 
 ---
@@ -278,7 +353,7 @@ const fetchProjects = async () => {
     setIsLoading(true);
     setError(null);
     
-    const response = await fetch(`${API_BASE_URL}/api/projects`);
+    const response = await fetch('/api/projects');
     
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -295,9 +370,9 @@ const fetchProjects = async () => {
 };
 ```
 
-**Backend:**
-```javascript
-app.get('/api/projects', async (req, res) => {
+**API Routes:**
+```typescript
+export async function GET() {
   try {
     const { data, error } = await supabase
       .from('projects')
@@ -305,16 +380,16 @@ app.get('/api/projects', async (req, res) => {
       .order('updated_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching projects:', error);
-      return res.status(500).json({ error: 'Failed to fetch projects' });
+      console.error('Supabase error:', error);
+      return NextResponse.json({ error: 'Failed to fetch projects' }, { status: 500 });
     }
 
-    res.json({ projects: data || [] });
+    return NextResponse.json({ projects: data || [] });
   } catch (error) {
     console.error('Unexpected error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-});
+}
 ```
 
 ### 2. State Management Pattern
@@ -338,7 +413,7 @@ const [isCreatingProject, setIsCreatingProject] = useState(false);
 ```typescript
 // Debounced auto-save
 const handleSave = useCallback(async () => {
-  if (!isDirty || !content) return;
+  if (!hasChanges || !content) return;
   
   setIsSaving(true);
   
@@ -351,15 +426,15 @@ const handleSave = useCallback(async () => {
   } finally {
     setIsSaving(false);
   }
-}, [isDirty, content, onSave]);
+}, [hasChanges, content, onSave]);
 
 // Auto-save triggers
 useEffect(() => {
-  if (isDirty) {
+  if (hasChanges) {
     const timer = setTimeout(handleSave, 2000); // 2 second delay
     return () => clearTimeout(timer);
   }
-}, [isDirty, handleSave]);
+}, [hasChanges, handleSave]);
 ```
 
 ---
@@ -398,80 +473,138 @@ const editorDirection = locale === 'fa' ? 'rtl' : 'ltr';
 
 ## Performance Considerations
 
-### 1. Debounced Operations
-- Auto-save with 2-second delay
-- Search input debouncing (future)
-- Resize event handling
+### 1. Serverless Optimizations
+- **Cold Start Mitigation**: Optimized imports and minimal dependencies
+- **Function Size**: Keep API routes lightweight
+- **Connection Pooling**: Supabase handles connection management
+- **Edge Functions**: Future consideration for global performance
 
-### 2. Optimized Re-renders
-- `useCallback` for event handlers
-- `useMemo` for expensive calculations
-- Proper dependency arrays in `useEffect`
+### 2. Frontend Optimizations
+- **Debounced Operations**: Auto-save with 2-second delay
+- **Optimized Re-renders**: `useCallback` and `useMemo` usage
+- **Code Splitting**: Route-based splitting with Next.js
+- **Image Optimization**: Next.js Image component (future)
 
-### 3. Code Splitting
-- Dynamic imports for heavy components
-- Route-based code splitting with Next.js
+### 3. Database Optimizations
+- **Indexes**: Proper indexing on frequently queried columns
+- **Query Optimization**: Select only needed fields
+- **Connection Management**: Supabase handles connection pooling
 
 ---
 
 ## Security Considerations
 
 ### 1. Input Validation
-- Server-side validation for all inputs
-- Length limits on text fields
-- Type checking for all parameters
+- **Server-side validation**: All API routes validate input
+- **Length limits**: Text field character limits
+- **Type checking**: TypeScript ensures type safety
+- **SQL Injection**: Supabase client prevents SQL injection
 
 ### 2. Content Security
-- HTML content sanitization (to be implemented)
-- XSS protection considerations
-- CORS configuration
+- **HTML Sanitization**: Future implementation needed
+- **XSS Protection**: Careful handling of HTML content
+- **CORS**: Configured for production domains
 
 ### 3. Environment Variables
-- Secure credential storage
-- Proper `.gitignore` configuration
-- Environment-specific configurations
-
----
-
-## Testing Strategy (Future)
-
-### Unit Tests
-- Component rendering tests
-- Utility function tests
-- API endpoint tests
-
-### Integration Tests
-- User flow testing
-- API integration tests
-- Database operation tests
-
-### E2E Tests
-- Critical user journeys
-- Cross-browser compatibility
-- Mobile responsiveness
+- **Secure Storage**: Environment variables in Vercel
+- **Gitignore**: Proper `.gitignore` configuration
+- **Type Safety**: Environment variable validation
 
 ---
 
 ## Deployment Guide
 
-### Frontend (Vercel)
-1. Connect GitHub repository
-2. Configure environment variables
-3. Set build command: `cd frontend && npm run build`
-4. Set output directory: `frontend/.next`
+### Vercel Deployment (Recommended)
 
-### Backend (To be determined)
-1. Railway/Render deployment
-2. Environment variable configuration
-3. Database connection setup
-4. CORS origin configuration
+1. **Connect Repository**
+   - Connect GitHub repository to Vercel
+   - Automatic deployments on push to main branch
 
-### Database (Supabase)
-1. Create project
-2. Run migration scripts
-3. Configure RLS policies
-4. Set up storage buckets (for media)
+2. **Environment Variables**
+   ```
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+   ```
+
+3. **Build Configuration**
+   - Build Command: `npm run build`
+   - Output Directory: `.next`
+   - Install Command: `npm install`
+
+4. **Deploy**
+   - Vercel automatically builds and deploys
+   - Edge functions for global performance
+
+### Manual Deployment
+
+```bash
+# Build the application
+npm run build
+
+# Start production server
+npm start
+```
+
+### Database Setup (Supabase)
+
+1. **Create Project**
+   - Create new Supabase project
+   - Note down URL and anon key
+
+2. **Run Migrations**
+   ```sql
+   -- Run the migration scripts in supabase/migrations/
+   ```
+
+3. **Configure RLS**
+   - Set up Row Level Security policies
+   - Configure storage buckets (future)
 
 ---
 
-*This implementation guide will be updated as the application evolves and new patterns emerge.*
+## Development Workflow
+
+### Local Development
+
+```bash
+# Install dependencies
+npm install
+
+# Set up environment
+cp env.example .env.local
+# Edit .env.local with your Supabase credentials
+
+# Start development server
+npm run dev
+```
+
+### Code Quality
+
+- **TypeScript**: Strict mode enabled
+- **ESLint**: Next.js recommended configuration
+- **Prettier**: Code formatting (if configured)
+- **Git Hooks**: Pre-commit hooks (future)
+
+### Testing Strategy (Future)
+
+- **Unit Tests**: Component and utility function tests
+- **Integration Tests**: API route testing
+- **E2E Tests**: Critical user journey testing
+
+---
+
+## Monitoring and Analytics
+
+### Performance Monitoring
+- **Vercel Analytics**: Built-in performance monitoring
+- **Core Web Vitals**: Automatic tracking
+- **Function Metrics**: API route performance
+
+### Error Tracking
+- **Vercel Error Tracking**: Built-in error monitoring
+- **Custom Error Handling**: Structured error responses
+- **Logging**: Console logging for development
+
+---
+
+*This implementation guide reflects the clean serverless architecture implemented in January 2025. It will be updated as the application evolves and new patterns emerge.*
