@@ -8,6 +8,7 @@ import { ArrowLeft, Plus, FileText, Calendar, Menu, X } from 'lucide-react';
 import { useLocale } from '@/components/LocaleContext';
 import { RichTextEditor } from '@/components/RichTextEditor';
 import { Project, Note } from '@/lib/supabase';
+import { extractNoteTitle } from '@/lib/utils';
 
 // Translations for project detail page
 const translations = {
@@ -97,13 +98,16 @@ export default function ProjectDetailPage() {
 
   const handleCreateNote = async (content: string) => {
     try {
+      // Extract first line as title
+      const title = extractNoteTitle(content);
+
       const response = await fetch(`/api/projects/${projectId}/notes`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          title: 'Untitled Note',
+          title: title,
           content: content
         }),
       });
@@ -125,12 +129,16 @@ export default function ProjectDetailPage() {
 
   const handleUpdateNote = async (noteId: string, content: string) => {
     try {
+      // Extract first line as title
+      const title = extractNoteTitle(content);
+
       const response = await fetch(`/api/notes/${noteId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          title: title,
           content: content
         }),
       });
