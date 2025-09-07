@@ -9,7 +9,7 @@ import { useLocale } from '@/components/LocaleContext';
 import { CreateProjectDialog } from '@/components/CreateProjectDialog';
 import { DeleteConfirmDialog } from '@/components/DeleteConfirmDialog';
 import { Project } from '@/lib/supabase';
-import { MoreVertical, Edit2, Trash2, Check, X } from 'lucide-react';
+import { Edit2, Trash2, Check, X } from 'lucide-react';
 
 // Simple translations object
 const translations = {

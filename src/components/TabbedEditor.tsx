@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Plus, X, Save } from 'lucide-react';
 import { useLocale } from '@/components/LocaleContext';
-import { NoteTab, NoteTabs } from '@/lib/supabase';
+import { NoteTabs } from '@/lib/supabase';
 
 interface TabbedEditorProps {
   noteId: string;
@@ -207,7 +207,7 @@ export function TabbedEditor({
       <div className="border-b border-gray-200 bg-gray-50">
         <div className="flex items-center justify-between p-3">
           <div className="flex items-center gap-2 overflow-x-auto">
-            {sortedTabs.map(([tabName, tab]) => (
+            {sortedTabs.map(([tabName]) => (
               <div key={tabName} className="flex items-center">
                 <Button
                   variant={activeTab === tabName ? "default" : "ghost"}

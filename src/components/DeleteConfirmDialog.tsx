@@ -75,7 +75,7 @@ export function DeleteConfirmDialog({
           
           <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
             <p className="text-sm font-medium text-gray-900">
-              {t.projectName} <span className="font-semibold">"{projectName}"</span>
+              {t.projectName} <span className="font-semibold">&ldquo;{projectName}&rdquo;</span>
             </p>
           </div>
           
