@@ -16,10 +16,10 @@ export function LanguageSwitcher() {
       variant="outline"
       size="sm"
       onClick={handleSwitch}
-      className="flex items-center gap-2"
+      className="flex items-center gap-1 h-7 px-2"
       dir={dir}
     >
-      <span className="text-sm font-medium">
+      <span className="text-xs font-medium">
         {locale === 'en' ? 'فارسی' : 'English'}
       </span>
     </Button>
