@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useLocale } from '@/components/LocaleContext';
 import { CreateProjectDialog } from '@/components/CreateProjectDialog';
+import { DeleteConfirmDialog } from '@/components/DeleteConfirmDialog';
 import { Project } from '@/lib/supabase';
 import { MoreVertical, Edit2, Trash2, Check, X } from 'lucide-react';
 
@@ -65,6 +66,16 @@ export default function HomePage() {
   const [error, setError] = useState<string | null>(null);
   const [editingProject, setEditingProject] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
+  const [deleteDialog, setDeleteDialog] = useState<{
+    isOpen: boolean;
+    projectId: string;
+    projectName: string;
+  }>({
+    isOpen: false,
+    projectId: '',
+    projectName: ''
+  });
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Fetch projects on component mount
   useEffect(() => {
@@ -157,12 +168,18 @@ export default function HomePage() {
     console.log('Project found:', project);
     console.log('Project name:', projectName);
     
-    if (!confirm(`${t.projects.confirmDelete}\n\nProject: "${projectName}"`)) {
-      console.log('User cancelled deletion');
-      return;
-    }
+    // Open the delete confirmation dialog
+    setDeleteDialog({
+      isOpen: true,
+      projectId: projectId,
+      projectName: projectName
+    });
+  };
 
+  const handleConfirmDelete = async () => {
+    const { projectId } = deleteDialog;
     console.log('User confirmed deletion, proceeding...');
+    setIsDeleting(true);
 
     try {
       const response = await fetch(`/api/projects/${projectId}`, {
@@ -183,10 +200,28 @@ export default function HomePage() {
 
       setProjects(prev => prev.filter(p => p.id !== projectId));
       console.log(t.projects.projectDeleted);
+      
+      // Close the dialog
+      setDeleteDialog({
+        isOpen: false,
+        projectId: '',
+        projectName: ''
+      });
     } catch (error) {
       console.error('Error deleting project:', error);
       alert(error instanceof Error ? error.message : t.projects.deleteError);
+    } finally {
+      setIsDeleting(false);
     }
+  };
+
+  const handleCancelDelete = () => {
+    console.log('User cancelled deletion');
+    setDeleteDialog({
+      isOpen: false,
+      projectId: '',
+      projectName: ''
+    });
   };
 
   if (isLoading) {
@@ -345,6 +380,15 @@ export default function HomePage() {
           </div>
         )}
       </main>
+      
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmDialog
+        isOpen={deleteDialog.isOpen}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        projectName={deleteDialog.projectName}
+        isLoading={isDeleting}
+      />
     </div>
   );
 }
