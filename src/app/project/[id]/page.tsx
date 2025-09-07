@@ -238,7 +238,13 @@ export default function ProjectDetailPage() {
                         ? 'bg-blue-50 border-blue-200' 
                         : 'hover:bg-gray-50'
                     }`}
-                    onClick={() => setSelectedNote(note)}
+                    onClick={() => {
+                      console.log('Selected note data:', note);
+                      console.log('Note tabs:', note.tabs);
+                      console.log('Note active_tab:', note.active_tab);
+                      console.log('Note default_tabs:', note.default_tabs);
+                      setSelectedNote(note);
+                    }}
                   >
                     <CardContent className="p-3">
                       <div className="flex items-start justify-between">
@@ -291,38 +297,56 @@ export default function ProjectDetailPage() {
         {selectedNote || isCreatingNote ? (
           <div className="flex-1">
             {selectedNote ? (
-              <TabbedEditor
-                noteId={selectedNote.id}
-                initialTabs={selectedNote.tabs}
-                initialActiveTab={selectedNote.active_tab}
-                onSave={handleUpdateNoteTabs}
-              />
+              <div>
+                <TabbedEditor
+                  noteId={selectedNote.id}
+                  initialTabs={selectedNote.tabs}
+                  initialActiveTab={selectedNote.active_tab}
+                  onSave={handleUpdateNoteTabs}
+                />
+                {/* Debug info */}
+                <div className="mt-4 p-2 bg-gray-100 text-xs">
+                  <div>Debug - Note ID: {selectedNote.id}</div>
+                  <div>Debug - Tabs: {JSON.stringify(selectedNote.tabs)}</div>
+                  <div>Debug - Active Tab: {selectedNote.active_tab}</div>
+                  <div>Debug - Default Tabs: {JSON.stringify(selectedNote.default_tabs)}</div>
+                </div>
+              </div>
             ) : (
-              <div className="h-full p-4">
-                <Card className="h-full">
-                  <CardContent className="p-4 h-full">
-                    <textarea
-                      placeholder={locale === 'fa' ? 'اینجا شروع به نوشتن کنید...' : 'Start writing here...'}
-                      className="w-full h-full resize-none border-none outline-none text-sm leading-relaxed"
-                      style={{ minHeight: '400px' }}
-                      onKeyDown={async (e) => {
-                        if (e.key === 'Enter' && e.ctrlKey) {
-                          const content = (e.target as HTMLTextAreaElement).value;
-                          if (content.trim()) {
-                            try {
-                              await handleCreateNote(content);
-                            } catch (error) {
-                              console.error('Error creating note:', error);
-                            }
-                          }
-                        }
-                      }}
-                    />
-                    <div className="mt-2 text-xs text-gray-500">
-                      {locale === 'fa' ? 'Ctrl+Enter برای ذخیره' : 'Ctrl+Enter to save'}
-                    </div>
-                  </CardContent>
-                </Card>
+              <div className="h-full">
+                <TabbedEditor
+                  noteId="new-note"
+                  initialTabs={{
+                    finding: {
+                      content: '',
+                      order: 1,
+                      created_at: new Date().toISOString()
+                    },
+                    evidence: {
+                      content: '',
+                      order: 2,
+                      created_at: new Date().toISOString()
+                    },
+                    details: {
+                      content: '',
+                      order: 3,
+                      created_at: new Date().toISOString()
+                    }
+                  }}
+                  initialActiveTab="finding"
+                  onSave={async (noteId, tabs, activeTab) => {
+                    // Extract content from the finding tab for the main content
+                    const content = tabs.finding?.content || '';
+                    if (content.trim()) {
+                      try {
+                        await handleCreateNote(content);
+                      } catch (error) {
+                        console.error('Error creating note:', error);
+                        throw error;
+                      }
+                    }
+                  }}
+                />
               </div>
             )}
           </div>
