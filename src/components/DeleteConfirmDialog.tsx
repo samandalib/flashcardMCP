@@ -1,7 +1,5 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle, X } from 'lucide-react';
 import { useLocale } from '@/components/LocaleContext';
 
@@ -49,33 +47,33 @@ export function DeleteConfirmDialog({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="pb-4">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-md border border-gray-200">
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-red-500" />
-              <CardTitle className="text-lg text-red-600">
+              <h3 className="text-lg font-semibold text-gray-900">
                 {t.confirmDelete}
-              </CardTitle>
+              </h3>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
+            <button
               onClick={onClose}
               disabled={isLoading}
-              className="h-6 w-6 p-0"
+              className="text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
             >
-              <X className="h-4 w-4" />
-            </Button>
+              <X className="h-5 w-5" />
+            </button>
           </div>
-        </CardHeader>
+        </div>
         
-        <CardContent className="space-y-4">
+        {/* Content */}
+        <div className="px-6 py-4 space-y-4">
           <p className="text-gray-700">
             {t.confirmMessage}
           </p>
           
-          <div className="bg-gray-50 p-3 rounded-md">
+          <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
             <p className="text-sm font-medium text-gray-900">
               {t.projectName} <span className="font-semibold">"{projectName}"</span>
             </p>
@@ -86,25 +84,23 @@ export function DeleteConfirmDialog({
           </p>
           
           <div className="flex gap-3 pt-2">
-            <Button
-              variant="outline"
+            <button
               onClick={onClose}
               disabled={isLoading}
-              className="flex-1"
+              className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {t.cancel}
-            </Button>
-            <Button
-              variant="destructive"
+            </button>
+            <button
               onClick={onConfirm}
               disabled={isLoading}
-              className="flex-1"
+              className="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {isLoading ? t.deleting : t.delete}
-            </Button>
+            </button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
