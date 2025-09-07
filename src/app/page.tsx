@@ -4,9 +4,12 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { useLocale } from '@/components/LocaleContext';
 import { CreateProjectDialog } from '@/components/CreateProjectDialog';
+import { DeleteConfirmDialog } from '@/components/DeleteConfirmDialog';
 import { Project } from '@/lib/supabase';
+import { Edit2, Trash2, Check, X } from 'lucide-react';
 
 // Simple translations object
 const translations = {
@@ -21,7 +24,14 @@ const translations = {
       recentProjects: "Recent Projects",
       viewProject: "View Project",
       loading: "Loading projects...",
-      error: "Failed to load projects"
+      error: "Failed to load projects",
+      editProject: "Edit Project",
+      deleteProject: "Delete Project",
+      confirmDelete: "Are you sure you want to delete this project?",
+      projectDeleted: "Project deleted successfully",
+      projectUpdated: "Project updated successfully",
+      deleteError: "Failed to delete project",
+      updateError: "Failed to update project"
     }
   },
   fa: {
@@ -35,7 +45,14 @@ const translations = {
       recentProjects: "پروژه‌های اخیر",
       viewProject: "مشاهده پروژه",
       loading: "در حال بارگذاری پروژه‌ها...",
-      error: "خطا در بارگذاری پروژه‌ها"
+      error: "خطا در بارگذاری پروژه‌ها",
+      editProject: "ویرایش پروژه",
+      deleteProject: "حذف پروژه",
+      confirmDelete: "آیا مطمئن هستید که می‌خواهید این پروژه را حذف کنید؟",
+      projectDeleted: "پروژه با موفقیت حذف شد",
+      projectUpdated: "پروژه با موفقیت به‌روزرسانی شد",
+      deleteError: "خطا در حذف پروژه",
+      updateError: "خطا در به‌روزرسانی پروژه"
     }
   }
 };
@@ -47,6 +64,18 @@ export default function HomePage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [editingProject, setEditingProject] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+  const [deleteDialog, setDeleteDialog] = useState<{
+    isOpen: boolean;
+    projectId: string;
+    projectName: string;
+  }>({
+    isOpen: false,
+    projectId: '',
+    projectName: ''
+  });
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Fetch projects on component mount
   useEffect(() => {
@@ -94,6 +123,105 @@ export default function HomePage() {
       console.error('Error creating project:', error);
       throw error; // Re-throw to let the dialog handle the error
     }
+  };
+
+  const handleEditProject = (project: Project) => {
+    setEditingProject(project.id);
+    setEditName(project.name);
+  };
+
+  const handleSaveEdit = async (projectId: string) => {
+    try {
+      const response = await fetch(`/api/projects/${projectId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: editName.trim() }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || t.projects.updateError);
+      }
+
+      const data = await response.json();
+      setProjects(prev => prev.map(p => p.id === projectId ? data.project : p));
+      setEditingProject(null);
+      setEditName('');
+    } catch (error) {
+      console.error('Error updating project:', error);
+      alert(error instanceof Error ? error.message : t.projects.updateError);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingProject(null);
+    setEditName('');
+  };
+
+  const handleDeleteProject = async (projectId: string) => {
+    console.log('handleDeleteProject called with projectId:', projectId);
+    const project = projects.find(p => p.id === projectId);
+    const projectName = project?.name || 'this project';
+    
+    console.log('Project found:', project);
+    console.log('Project name:', projectName);
+    
+    // Open the delete confirmation dialog
+    setDeleteDialog({
+      isOpen: true,
+      projectId: projectId,
+      projectName: projectName
+    });
+  };
+
+  const handleConfirmDelete = async () => {
+    const { projectId } = deleteDialog;
+    console.log('User confirmed deletion, proceeding...');
+    setIsDeleting(true);
+
+    try {
+      const response = await fetch(`/api/projects/${projectId}`, {
+        method: 'DELETE',
+      });
+
+      console.log('Delete response status:', response.status);
+      console.log('Delete response ok:', response.ok);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.log('Delete error data:', errorData);
+        throw new Error(errorData.error || t.projects.deleteError);
+      }
+
+      const result = await response.json();
+      console.log('Delete success result:', result);
+
+      setProjects(prev => prev.filter(p => p.id !== projectId));
+      console.log(t.projects.projectDeleted);
+      
+      // Close the dialog
+      setDeleteDialog({
+        isOpen: false,
+        projectId: '',
+        projectName: ''
+      });
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      alert(error instanceof Error ? error.message : t.projects.deleteError);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    console.log('User cancelled deletion');
+    setDeleteDialog({
+      isOpen: false,
+      projectId: '',
+      projectName: ''
+    });
   };
 
   if (isLoading) {
@@ -151,9 +279,85 @@ export default function HomePage() {
             
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {projects.map((project) => (
-                <Card key={project.id} className="hover:shadow-md transition-shadow cursor-pointer">
+                <Card 
+                  key={project.id} 
+                  className="hover:shadow-md transition-shadow cursor-pointer relative"
+                  onClick={() => router.push(`/project/${project.id}`)}
+                >
+                  {/* Edit/Delete Menu */}
+                  <div className="absolute top-2 right-2">
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 hover:bg-gray-100"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditProject(project);
+                        }}
+                        title={t.projects.editProject}
+                      >
+                        <Edit2 className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 hover:bg-red-100 hover:text-red-600"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          console.log('Delete button clicked for project:', project.id);
+                          handleDeleteProject(project.id);
+                        }}
+                        title={t.projects.deleteProject}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+
                   <CardHeader>
-                    <CardTitle className="text-lg">{project.name}</CardTitle>
+                    {editingProject === project.id ? (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          className="text-lg font-semibold"
+                          onClick={(e) => e.stopPropagation()}
+                          onKeyDown={(e) => {
+                            e.stopPropagation();
+                            if (e.key === 'Enter') {
+                              handleSaveEdit(project.id);
+                            } else if (e.key === 'Escape') {
+                              handleCancelEdit();
+                            }
+                          }}
+                          autoFocus
+                        />
+                        <Button
+                          size="sm"
+                          className="h-6 w-6 p-0 bg-green-600 hover:bg-green-700"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSaveEdit(project.id);
+                          }}
+                        >
+                          <Check className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 w-6 p-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCancelEdit();
+                          }}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <CardTitle className="text-lg">{project.name}</CardTitle>
+                    )}
                     {project.description && (
                       <p className="text-sm text-gray-600 line-clamp-2">
                         {project.description}
@@ -165,13 +369,9 @@ export default function HomePage() {
                       <span className="text-xs text-gray-500">
                         {new Date(project.created_at).toLocaleDateString(locale === 'fa' ? 'fa-IR' : 'en-US')}
                       </span>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => router.push(`/project/${project.id}`)}
-                      >
+                      <span className="text-xs text-blue-600 font-medium">
                         {t.projects.viewProject}
-                      </Button>
+                      </span>
                     </div>
                   </CardContent>
                 </Card>
@@ -180,6 +380,15 @@ export default function HomePage() {
           </div>
         )}
       </main>
+      
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmDialog
+        isOpen={deleteDialog.isOpen}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        projectName={deleteDialog.projectName}
+        isLoading={isDeleting}
+      />
     </div>
   );
 }

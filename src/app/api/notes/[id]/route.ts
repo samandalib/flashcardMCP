@@ -35,7 +35,7 @@ export async function PUT(
     }
 
     // Build update object
-    const updateData: Record<string, any> = {};
+      const updateData: Record<string, string | object> = {};
     if (title !== undefined) updateData.title = title.trim();
     if (content !== undefined) updateData.content = content.trim();
     if (tabs !== undefined) updateData.tabs = tabs;

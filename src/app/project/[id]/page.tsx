@@ -127,7 +127,7 @@ export default function ProjectDetailPage() {
     }
   };
 
-  const handleUpdateNoteTabs = async (noteId: string, tabs: any, activeTab: string) => {
+  const handleUpdateNoteTabs = async (noteId: string, tabs: Record<string, object>, activeTab: string) => {
     try {
       const response = await fetch(`/api/notes/${noteId}`, {
         method: 'PUT',
