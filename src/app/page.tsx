@@ -246,11 +246,11 @@ export default function HomePage() {
               {projects.map((project) => (
                 <Card 
                   key={project.id} 
-                  className="hover:shadow-md transition-shadow cursor-pointer relative group"
+                  className="hover:shadow-md transition-shadow cursor-pointer relative"
                   onClick={() => router.push(`/project/${project.id}`)}
                 >
                   {/* Edit/Delete Menu */}
-                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="absolute top-2 right-2">
                     <div className="flex gap-1">
                       <Button
                         variant="ghost"
