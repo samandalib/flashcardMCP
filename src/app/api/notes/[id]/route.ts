@@ -9,7 +9,7 @@ export async function PUT(
   try {
     const { id: noteId } = await params;
     const body = await request.json();
-    const { title, content } = body;
+    const { title, content, tabs, active_tab } = body;
 
     if (!noteId) {
       return NextResponse.json({ error: 'Note ID is required' }, { status: 400 });
@@ -35,9 +35,11 @@ export async function PUT(
     }
 
     // Build update object
-    const updateData: Record<string, string> = {};
+    const updateData: Record<string, any> = {};
     if (title !== undefined) updateData.title = title.trim();
     if (content !== undefined) updateData.content = content.trim();
+    if (tabs !== undefined) updateData.tabs = tabs;
+    if (active_tab !== undefined) updateData.active_tab = active_tab;
     updateData.updated_at = new Date().toISOString();
 
     const { data, error } = await supabase

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ArrowLeft, Plus, FileText, Calendar, Menu, X } from 'lucide-react';
 import { useLocale } from '@/components/LocaleContext';
-import { RichTextEditor } from '@/components/RichTextEditor';
+import { TabbedEditor } from '@/components/TabbedEditor';
 import { Project, Note } from '@/lib/supabase';
 import { extractNoteTitle } from '@/lib/utils';
 
@@ -127,19 +127,16 @@ export default function ProjectDetailPage() {
     }
   };
 
-  const handleUpdateNote = async (noteId: string, content: string) => {
+  const handleUpdateNoteTabs = async (noteId: string, tabs: any, activeTab: string) => {
     try {
-      // Extract first line as title
-      const title = extractNoteTitle(content);
-
       const response = await fetch(`/api/notes/${noteId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          title: title,
-          content: content
+          tabs: tabs,
+          active_tab: activeTab
         }),
       });
 
@@ -152,7 +149,7 @@ export default function ProjectDetailPage() {
       setNotes(prev => prev.map(note => note.id === noteId ? data.note : note));
       setSelectedNote(data.note);
     } catch (error) {
-      console.error('Error updating note:', error);
+      console.error('Error updating note tabs:', error);
       throw error;
     }
   };
@@ -300,14 +297,43 @@ export default function ProjectDetailPage() {
         </div>
 
         {selectedNote || isCreatingNote ? (
-          <RichTextEditor
-            onSave={selectedNote ? 
-              (content) => handleUpdateNote(selectedNote.id, content) :
-              (content) => handleCreateNote(content)
-            }
-            initialContent={selectedNote?.content || ''}
-            placeholder={locale === 'fa' ? 'اینجا شروع به نوشتن کنید...' : 'Start writing here...'}
-          />
+          <div className="flex-1">
+            {selectedNote ? (
+              <TabbedEditor
+                noteId={selectedNote.id}
+                initialTabs={selectedNote.tabs}
+                initialActiveTab={selectedNote.active_tab}
+                onSave={handleUpdateNoteTabs}
+              />
+            ) : (
+              <div className="h-full p-4">
+                <Card className="h-full">
+                  <CardContent className="p-4 h-full">
+                    <textarea
+                      placeholder={locale === 'fa' ? 'اینجا شروع به نوشتن کنید...' : 'Start writing here...'}
+                      className="w-full h-full resize-none border-none outline-none text-sm leading-relaxed"
+                      style={{ minHeight: '400px' }}
+                      onKeyDown={async (e) => {
+                        if (e.key === 'Enter' && e.ctrlKey) {
+                          const content = (e.target as HTMLTextAreaElement).value;
+                          if (content.trim()) {
+                            try {
+                              await handleCreateNote(content);
+                            } catch (error) {
+                              console.error('Error creating note:', error);
+                            }
+                          }
+                        }
+                      }}
+                    />
+                    <div className="mt-2 text-xs text-gray-500">
+                      {locale === 'fa' ? 'Ctrl+Enter برای ذخیره' : 'Ctrl+Enter to save'}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </div>
         ) : (
           <div className="flex-1 flex items-center justify-center bg-white">
             <div className="text-center">

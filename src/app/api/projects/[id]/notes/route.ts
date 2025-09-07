@@ -42,7 +42,7 @@ export async function POST(
   try {
     const { id: projectId } = await params;
     const body = await request.json();
-    const { title, content } = body;
+    const { title, content, tabs, active_tab } = body;
 
     if (!projectId) {
       return NextResponse.json({ error: 'Project ID is required' }, { status: 400 });
@@ -67,13 +67,40 @@ export async function POST(
       }, { status: 400 });
     }
 
+    // Create default tabs structure if not provided
+    const defaultTabs = {
+      finding: {
+        content: '',
+        order: 1,
+        created_at: new Date().toISOString()
+      },
+      evidence: {
+        content: '',
+        order: 2,
+        created_at: new Date().toISOString()
+      },
+      details: {
+        content: '',
+        order: 3,
+        created_at: new Date().toISOString()
+      }
+    };
+
+    // Set initial content in the finding tab
+    defaultTabs.finding.content = content.trim();
+
+    const noteData = {
+      project_id: projectId,
+      title: title.trim(),
+      content: content.trim(),
+      tabs: tabs || defaultTabs,
+      active_tab: active_tab || 'finding',
+      default_tabs: ['finding', 'evidence', 'details']
+    };
+
     const { data, error } = await supabase
       .from('notes')
-      .insert({
-        project_id: projectId,
-        title: title.trim(),
-        content: content.trim()
-      })
+      .insert(noteData)
       .select()
       .single();
 
