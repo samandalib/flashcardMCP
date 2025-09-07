@@ -152,6 +152,53 @@ export function TabbedEditor({
     return displayNames[tabName] || tabName.replace(/_/g, ' ');
   };
 
+  const getTabBackgroundColor = (tabName: string) => {
+    const colors: Record<string, string> = {
+      finding: 'bg-blue-50 border-blue-200', // Light blue
+      evidence: 'bg-green-50 border-green-200', // Light green
+      details: 'bg-purple-50 border-purple-200', // Light purple
+    };
+    
+    // For custom tabs, use a cycling pattern
+    if (!colors[tabName]) {
+      const customTabIndex = Object.keys(tabs).filter(key => !colors[key]).indexOf(tabName);
+      const customColors = [
+        'bg-orange-50 border-orange-200', // Light orange
+        'bg-pink-50 border-pink-200', // Light pink
+        'bg-indigo-50 border-indigo-200', // Light indigo
+        'bg-teal-50 border-teal-200', // Light teal
+        'bg-yellow-50 border-yellow-200', // Light yellow
+        'bg-red-50 border-red-200', // Light red
+      ];
+      return customColors[customTabIndex % customColors.length];
+    }
+    
+    return colors[tabName];
+  };
+
+  const getTabTextColor = (tabName: string) => {
+    const colors: Record<string, string> = {
+      finding: 'text-blue-700',
+      evidence: 'text-green-700',
+      details: 'text-purple-700',
+    };
+    
+    if (!colors[tabName]) {
+      const customTabIndex = Object.keys(tabs).filter(key => !colors[key]).indexOf(tabName);
+      const customColors = [
+        'text-orange-700',
+        'text-pink-700',
+        'text-indigo-700',
+        'text-teal-700',
+        'text-yellow-700',
+        'text-red-700',
+      ];
+      return customColors[customTabIndex % customColors.length];
+    }
+    
+    return colors[tabName];
+  };
+
   const sortedTabs = Object.entries(tabs).sort(([,a], [,b]) => a.order - b.order);
 
   return (
@@ -166,7 +213,11 @@ export function TabbedEditor({
                   variant={activeTab === tabName ? "default" : "ghost"}
                   size="sm"
                   onClick={() => setActiveTab(tabName)}
-                  className="whitespace-nowrap"
+                  className={`whitespace-nowrap transition-all duration-200 ${
+                    activeTab === tabName 
+                      ? `${getTabBackgroundColor(tabName)} ${getTabTextColor(tabName)} border-2` 
+                      : `hover:${getTabBackgroundColor(tabName)} hover:${getTabTextColor(tabName)}`
+                  }`}
                 >
                   {getTabDisplayName(tabName)}
                 </Button>
@@ -175,7 +226,7 @@ export function TabbedEditor({
                     variant="ghost"
                     size="sm"
                     onClick={() => deleteTab(tabName)}
-                    className="ml-1 p-1 h-6 w-6 text-red-500 hover:text-red-700"
+                    className="ml-1 p-1 h-6 w-6 text-red-500 hover:text-red-700 hover:bg-red-50"
                   >
                     <X className="h-3 w-3" />
                   </Button>
@@ -249,13 +300,13 @@ export function TabbedEditor({
 
       {/* Tab Content */}
       <div className="flex-1 p-4">
-        <Card className="h-full">
+        <Card className={`h-full ${getTabBackgroundColor(activeTab)}`}>
           <CardContent className="p-4 h-full">
             <textarea
               value={tabs[activeTab]?.content || ''}
               onChange={(e) => handleTabContentChange(activeTab, e.target.value)}
               placeholder={`${getTabDisplayName(activeTab)} content...`}
-              className="w-full h-full resize-none border-none outline-none text-sm leading-relaxed"
+              className="w-full h-full resize-none border-none outline-none text-sm leading-relaxed bg-transparent"
               style={{ minHeight: '400px' }}
             />
           </CardContent>
