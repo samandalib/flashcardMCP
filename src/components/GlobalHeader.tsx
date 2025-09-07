@@ -7,18 +7,18 @@ export function GlobalHeader() {
   const { locale } = useLocale();
 
   return (
-    <header className="bg-white border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-10">
+    <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
+      <div className="w-full px-3 sm:px-4 lg:px-8">
+        <div className="flex justify-between items-center h-12 sm:h-10">
           {/* Logo/Title */}
-          <div className="flex items-center">
-            <h1 className="text-sm font-medium text-gray-700">
+          <div className="flex items-center flex-1 min-w-0">
+            <h1 className="text-sm sm:text-sm font-medium text-gray-700 truncate">
               {locale === 'fa' ? 'سنتزکننده تحقیقات فلش‌کارت' : 'Flashcard Research Synthesizer'}
             </h1>
           </div>
 
           {/* Language Switcher */}
-          <div className="flex items-center">
+          <div className="flex items-center flex-shrink-0 ml-2">
             <LanguageSwitcher />
           </div>
         </div>

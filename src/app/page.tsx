@@ -249,9 +249,9 @@ export default function HomePage() {
   }
 
   return (
-    <div className="bg-gray-50" dir={dir}>
+    <div className="bg-gray-50 min-h-full flex flex-col" dir={dir}>
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-4 py-6">
+      <main className="flex-1 max-w-4xl mx-auto w-full px-3 sm:px-4 py-4 sm:py-6">
         {projects.length === 0 ? (
           /* Empty State */
           <Card className="text-center py-12">

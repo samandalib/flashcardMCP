@@ -20,7 +20,13 @@ export const metadata: Metadata = {
   description: 'AI-powered flashcard creation and research synthesis tool',
   manifest: '/manifest.json',
   themeColor: '#3b82f6',
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no',
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+    viewportFit: 'cover',
+  },
   icons: {
     icon: '/favicon.ico',
     apple: '/icons/icon-192x192.png',
@@ -47,12 +53,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" dir="ltr" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+    <html lang="en" dir="ltr" suppressHydrationWarning className="h-full">
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased h-full overflow-x-hidden`}>
         <LocaleProvider>
-          <div className="min-h-screen flex flex-col">
+          <div className="min-h-screen h-full flex flex-col bg-white">
             <GlobalHeader />
-            <main className="flex-1">
+            <main className="flex-1 flex flex-col">
               {children}
             </main>
             <PWAInstallPrompt />
