@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, Plus, FileText, Calendar } from 'lucide-react';
+import { ArrowLeft, Plus, FileText, Calendar, Menu, X } from 'lucide-react';
 import { useLocale } from '@/components/LocaleContext';
 import { RichTextEditor } from '@/components/RichTextEditor';
 import { Project, Note } from '@/lib/supabase';
@@ -20,7 +20,10 @@ const translations = {
     notes: "Notes",
     created: "Created",
     lastModified: "Last Modified",
-    newNote: "New Note"
+    newNote: "New Note",
+    toggleSidebar: "Toggle Sidebar",
+    showSidebar: "Show Sidebar",
+    hideSidebar: "Hide Sidebar"
   },
   fa: {
     backToProjects: "بازگشت به پروژه‌ها",
@@ -31,7 +34,10 @@ const translations = {
     notes: "یادداشت‌ها",
     created: "ایجاد شده",
     lastModified: "آخرین تغییر",
-    newNote: "یادداشت جدید"
+    newNote: "یادداشت جدید",
+    toggleSidebar: "تغییر وضعیت نوار کناری",
+    showSidebar: "نمایش نوار کناری",
+    hideSidebar: "مخفی کردن نوار کناری"
   }
 };
 
@@ -47,6 +53,7 @@ export default function ProjectDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [isCreatingNote, setIsCreatingNote] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const projectId = params.id as string;
 
@@ -168,7 +175,7 @@ export default function ProjectDetailPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex" dir={dir}>
       {/* Sidebar */}
-      <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
+      <div className={`${isSidebarOpen ? 'w-80' : 'w-0'} bg-white border-r border-gray-200 flex flex-col transition-all duration-300 overflow-hidden`}>
         {/* Header */}
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center gap-2 mb-2">
@@ -250,6 +257,39 @@ export default function ProjectDetailPage() {
 
       {/* Main Editor Area */}
       <div className="flex-1 flex flex-col">
+        {/* Editor Header with Sidebar Toggle */}
+        <div className="bg-white border-b border-gray-200 p-4">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                className="flex items-center gap-2"
+                title={isSidebarOpen ? t.hideSidebar : t.showSidebar}
+              >
+                {isSidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+                <span className="hidden sm:inline">
+                  {isSidebarOpen ? t.hideSidebar : t.showSidebar}
+                </span>
+              </Button>
+              {project && (
+                <div>
+                  <h1 className="text-lg font-semibold text-gray-900">{project.name}</h1>
+                  {project.description && (
+                    <p className="text-sm text-gray-600">{project.description}</p>
+                  )}
+                </div>
+              )}
+            </div>
+            {selectedNote && (
+              <div className="text-sm text-gray-500">
+                {locale === 'fa' ? 'یادداشت انتخاب شده' : 'Selected Note'}
+              </div>
+            )}
+          </div>
+        </div>
+
         {selectedNote || isCreatingNote ? (
           <RichTextEditor
             onSave={selectedNote ? 

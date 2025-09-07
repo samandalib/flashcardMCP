@@ -47,30 +47,34 @@ export function RichTextEditor({ onSave, initialContent = '', placeholder }: Ric
 
   return (
     <div className="flex flex-col h-full" dir={dir}>
-      {/* Editor Header */}
-      <div className="border-b border-gray-200 p-4 bg-white">
+      {/* Editor Toolbar */}
+      <div className="border-b border-gray-200 p-3 bg-gray-50">
         <div className="flex justify-between items-center">
-          <h2 className="text-lg font-semibold text-gray-900">
-            {locale === 'fa' ? 'ویرایشگر متن' : 'Text Editor'}
-          </h2>
           <div className="flex items-center gap-2">
             {hasChanges && (
-              <span className="text-sm text-orange-600">
+              <span className="text-sm text-orange-600 flex items-center gap-1">
+                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
                 {locale === 'fa' ? 'تغییرات ذخیره نشده' : 'Unsaved changes'}
               </span>
             )}
-            <Button
-              onClick={handleSave}
-              disabled={!hasChanges || isSaving}
-              size="sm"
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              {isSaving 
-                ? (locale === 'fa' ? 'در حال ذخیره...' : 'Saving...')
-                : (locale === 'fa' ? 'ذخیره' : 'Save')
-              }
-            </Button>
+            {!hasChanges && (
+              <span className="text-sm text-green-600 flex items-center gap-1">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                {locale === 'fa' ? 'ذخیره شده' : 'Saved'}
+              </span>
+            )}
           </div>
+          <Button
+            onClick={handleSave}
+            disabled={!hasChanges || isSaving}
+            size="sm"
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            {isSaving 
+              ? (locale === 'fa' ? 'در حال ذخیره...' : 'Saving...')
+              : (locale === 'fa' ? 'ذخیره' : 'Save')
+            }
+          </Button>
         </div>
       </div>
 
