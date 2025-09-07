@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useLocale } from '@/components/LocaleContext';
@@ -43,7 +42,7 @@ const translations = {
 
 export default function HomePage() {
   const router = useRouter();
-  const { locale, dir, setLocale } = useLocale();
+  const { locale, dir } = useLocale();
   const t = translations[locale as keyof typeof translations];
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -122,17 +121,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50" dir={dir}>
-      {/* Simple Header */}
-      <header className="bg-white border-b border-gray-200 px-4 py-3">
-        <div className="max-w-4xl mx-auto flex justify-between items-center">
-          <h1 className="text-lg font-semibold text-gray-900">
-            {t.navigation.projects}
-          </h1>
-          <LanguageSwitcher currentLocale={locale} onSwitch={setLocale} />
-        </div>
-      </header>
-      
+    <div className="bg-gray-50" dir={dir}>
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 py-6">
         {projects.length === 0 ? (

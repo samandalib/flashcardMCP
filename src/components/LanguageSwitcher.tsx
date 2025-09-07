@@ -3,17 +3,12 @@
 import { Button } from '@/components/ui/button';
 import { useLocale } from '@/components/LocaleContext';
 
-interface LanguageSwitcherProps {
-  currentLocale: string;
-  onSwitch: (locale: string) => void;
-}
-
-export function LanguageSwitcher({ currentLocale, onSwitch }: LanguageSwitcherProps) {
-  const { dir } = useLocale();
+export function LanguageSwitcher() {
+  const { locale, dir, setLocale } = useLocale();
 
   const handleSwitch = () => {
-    const newLocale = currentLocale === 'en' ? 'fa' : 'en';
-    onSwitch(newLocale);
+    const newLocale = locale === 'en' ? 'fa' : 'en';
+    setLocale(newLocale);
   };
 
   return (
@@ -25,7 +20,7 @@ export function LanguageSwitcher({ currentLocale, onSwitch }: LanguageSwitcherPr
       dir={dir}
     >
       <span className="text-sm font-medium">
-        {currentLocale === 'en' ? 'فارسی' : 'English'}
+        {locale === 'en' ? 'فارسی' : 'English'}
       </span>
     </Button>
   );

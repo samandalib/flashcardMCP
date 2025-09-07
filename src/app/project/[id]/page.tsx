@@ -179,7 +179,7 @@ export default function ProjectDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex" dir={dir}>
+    <div className="bg-gray-50 flex" dir={dir}>
       {/* Sidebar */}
       <div className={`${isSidebarOpen ? 'w-80' : 'w-0'} bg-white border-r border-gray-200 flex flex-col transition-all duration-300 overflow-hidden`}>
         {/* Header */}
@@ -279,14 +279,6 @@ export default function ProjectDetailPage() {
                   {isSidebarOpen ? t.hideSidebar : t.showSidebar}
                 </span>
               </Button>
-              {project && (
-                <div>
-                  <h1 className="text-lg font-semibold text-gray-900">{project.name}</h1>
-                  {project.description && (
-                    <p className="text-sm text-gray-600">{project.description}</p>
-                  )}
-                </div>
-              )}
             </div>
             {selectedNote && (
               <div className="text-sm text-gray-500">
