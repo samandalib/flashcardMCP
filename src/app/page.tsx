@@ -151,7 +151,11 @@ export default function HomePage() {
             
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {projects.map((project) => (
-                <Card key={project.id} className="hover:shadow-md transition-shadow cursor-pointer">
+                <Card 
+                  key={project.id} 
+                  className="hover:shadow-md transition-shadow cursor-pointer"
+                  onClick={() => router.push(`/project/${project.id}`)}
+                >
                   <CardHeader>
                     <CardTitle className="text-lg">{project.name}</CardTitle>
                     {project.description && (
@@ -165,13 +169,9 @@ export default function HomePage() {
                       <span className="text-xs text-gray-500">
                         {new Date(project.created_at).toLocaleDateString(locale === 'fa' ? 'fa-IR' : 'en-US')}
                       </span>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => router.push(`/project/${project.id}`)}
-                      >
+                      <span className="text-xs text-blue-600 font-medium">
                         {t.projects.viewProject}
-                      </Button>
+                      </span>
                     </div>
                   </CardContent>
                 </Card>
