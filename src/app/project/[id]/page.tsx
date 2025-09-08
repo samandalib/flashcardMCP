@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useLocale } from '@/components/LocaleContext';
 import { TabbedEditor } from '@/components/TabbedEditor';
 import { Project, Note } from '@/lib/supabase';
-import { ArrowLeft, Menu, FileText, Plus, Calendar, Download } from 'lucide-react';
+import { ArrowLeft, Menu, FileText, Plus, Calendar, Download, Edit2, Check, X } from 'lucide-react';
 
 interface ProjectPageProps {
   params: Promise<{ id: string }>;
@@ -26,7 +26,10 @@ const translations = {
     showSidebar: "Show Sidebar",
     hideSidebar: "Hide Sidebar",
     downloadNotes: "Download Notes",
-    downloadNotesAsJson: "Download Notes as JSON"
+    downloadNotesAsJson: "Download Notes as JSON",
+    editTitle: "Edit Title",
+    saveTitle: "Save",
+    cancelEdit: "Cancel"
   },
   fa: {
     backToProjects: "بازگشت به پروژه‌ها",
@@ -39,7 +42,10 @@ const translations = {
     showSidebar: "نمایش نوار کناری",
     hideSidebar: "مخفی کردن نوار کناری",
     downloadNotes: "دانلود یادداشت‌ها",
-    downloadNotesAsJson: "دانلود یادداشت‌ها به صورت JSON"
+    downloadNotesAsJson: "دانلود یادداشت‌ها به صورت JSON",
+    editTitle: "ویرایش عنوان",
+    saveTitle: "ذخیره",
+    cancelEdit: "لغو"
   }
 };
 
@@ -56,6 +62,8 @@ export default function ProjectPage({ params }: ProjectPageProps) {
   const [isCreatingNote, setIsCreatingNote] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [mobileView, setMobileView] = useState<'notes' | 'editor'>('notes');
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState<string>('');
 
   const resolvedParams = use(params);
   const projectId = resolvedParams.id;
@@ -163,6 +171,54 @@ export default function ProjectPage({ params }: ProjectPageProps) {
     setIsCreatingNote(true);
     setSelectedNote(null);
     setMobileView('editor');
+  };
+
+  const handleStartEditTitle = (note: Note) => {
+    setEditingNoteId(note.id);
+    setEditingTitle(note.title);
+  };
+
+  const handleCancelEditTitle = () => {
+    setEditingNoteId(null);
+    setEditingTitle('');
+  };
+
+  const handleSaveTitle = async (noteId: string) => {
+    if (!editingTitle.trim()) {
+      handleCancelEditTitle();
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/notes/${noteId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: editingTitle.trim()
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update note title');
+      }
+
+      const data = await response.json();
+      setNotes(prev => prev.map(note => note.id === noteId ? data.note : note));
+      
+      // Update selected note if it's the one being edited
+      if (selectedNote?.id === noteId) {
+        setSelectedNote(data.note);
+      }
+      
+      setEditingNoteId(null);
+      setEditingTitle('');
+    } catch (error) {
+      console.error('Error updating note title:', error);
+      // You could add a toast notification here
+    }
   };
 
   const handleDownloadNotes = () => {
@@ -326,19 +382,75 @@ export default function ProjectPage({ params }: ProjectPageProps) {
                   {notes.map((note) => (
                     <Card
                       key={note.id}
-                      className={`cursor-pointer transition-colors ${
+                      className={`transition-colors ${
+                        editingNoteId === note.id 
+                          ? 'cursor-default' 
+                          : 'cursor-pointer'
+                      } ${
                         selectedNote?.id === note.id 
                           ? 'bg-blue-50 border-blue-200' 
                           : 'hover:bg-gray-50'
                       }`}
-                      onClick={() => handleNoteSelect(note)}
+                      onClick={() => {
+                        if (editingNoteId !== note.id) {
+                          handleNoteSelect(note);
+                        }
+                      }}
                     >
                       <CardContent className="p-3">
                         <div className="flex items-start justify-between">
                           <div className="flex-1 min-w-0">
-                            <h3 className="text-sm font-medium text-gray-900 truncate">
-                              {note.title}
-                            </h3>
+                            {editingNoteId === note.id ? (
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="text"
+                                  value={editingTitle}
+                                  onChange={(e) => setEditingTitle(e.target.value)}
+                                  className="text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded px-2 py-1 flex-1"
+                                  autoFocus
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      handleSaveTitle(note.id);
+                                    } else if (e.key === 'Escape') {
+                                      handleCancelEditTitle();
+                                    }
+                                  }}
+                                />
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleSaveTitle(note.id)}
+                                  className="h-6 w-6 p-0 text-green-600 hover:text-green-700"
+                                >
+                                  <Check className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={handleCancelEditTitle}
+                                  className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <h3 className="text-sm font-medium text-gray-900 truncate flex-1">
+                                  {note.title}
+                                </h3>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleStartEditTitle(note);
+                                  }}
+                                  className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600"
+                                >
+                                  <Edit2 className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            )}
                             <p className="text-xs text-gray-500 mt-1">
                               {new Date(note.updated_at).toLocaleDateString(locale === 'fa' ? 'fa-IR' : 'en-US')}
                             </p>
@@ -403,15 +515,71 @@ export default function ProjectPage({ params }: ProjectPageProps) {
                     {notes.map((note) => (
                       <Card
                         key={note.id}
-                        className="cursor-pointer transition-colors hover:bg-gray-50"
-                        onClick={() => handleNoteSelect(note)}
+                        className={`transition-colors ${
+                          editingNoteId === note.id 
+                            ? 'cursor-default' 
+                            : 'cursor-pointer hover:bg-gray-50'
+                        }`}
+                        onClick={() => {
+                          if (editingNoteId !== note.id) {
+                            handleNoteSelect(note);
+                          }
+                        }}
                       >
                         <CardContent className="p-4">
                           <div className="flex items-start justify-between">
                             <div className="flex-1 min-w-0">
-                              <h3 className="text-base font-medium text-gray-900 truncate">
-                                {note.title}
-                              </h3>
+                              {editingNoteId === note.id ? (
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="text"
+                                    value={editingTitle}
+                                    onChange={(e) => setEditingTitle(e.target.value)}
+                                    className="text-base font-medium text-gray-900 bg-white border border-gray-300 rounded px-2 py-1 flex-1"
+                                    autoFocus
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        handleSaveTitle(note.id);
+                                      } else if (e.key === 'Escape') {
+                                        handleCancelEditTitle();
+                                      }
+                                    }}
+                                  />
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleSaveTitle(note.id)}
+                                    className="h-6 w-6 p-0 text-green-600 hover:text-green-700"
+                                  >
+                                    <Check className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={handleCancelEditTitle}
+                                    className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-2">
+                                  <h3 className="text-base font-medium text-gray-900 truncate flex-1">
+                                    {note.title}
+                                  </h3>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleStartEditTitle(note);
+                                    }}
+                                    className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600"
+                                  >
+                                    <Edit2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              )}
                               <p className="text-sm text-gray-500 mt-1">
                                 {new Date(note.updated_at).toLocaleDateString(locale === 'fa' ? 'fa-IR' : 'en-US')}
                               </p>
