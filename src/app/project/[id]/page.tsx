@@ -170,27 +170,20 @@ export default function ProjectPage({ params }: ProjectPageProps) {
       return;
     }
 
-    const exportData = {
-      project: {
-        id: project.id,
-        name: project.name,
-        description: project.description,
-        created_at: project.created_at,
-        updated_at: project.updated_at
-      },
-      notes: notes.map(note => ({
-        id: note.id,
-        title: note.title,
-        content: note.content,
-        tabs: note.tabs,
-        active_tab: note.active_tab,
-        default_tabs: note.default_tabs,
-        created_at: note.created_at,
-        updated_at: note.updated_at
-      })),
-      exported_at: new Date().toISOString(),
-      total_notes: notes.length
-    };
+    const exportData = notes.map(note => {
+      const tabContent: Record<string, string> = {};
+      
+      // Extract tab content (tab:value pairs)
+      if (note.tabs && typeof note.tabs === 'object') {
+        Object.entries(note.tabs).forEach(([tabName, tabData]) => {
+          if (tabData && typeof tabData === 'object' && 'content' in tabData) {
+            tabContent[tabName] = tabData.content || '';
+          }
+        });
+      }
+      
+      return tabContent;
+    });
 
     const jsonString = JSON.stringify(exportData, null, 2);
     const blob = new Blob([jsonString], { type: 'application/json' });
