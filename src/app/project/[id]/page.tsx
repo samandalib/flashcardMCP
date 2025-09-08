@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useLocale } from '@/components/LocaleContext';
 import { TabbedEditor } from '@/components/TabbedEditor';
 import { Project, Note } from '@/lib/supabase';
-import { ArrowLeft, Menu, FileText, Plus, Calendar, Download, Edit2, Check, X } from 'lucide-react';
+import { ArrowLeft, Menu, FileText, Plus, Download, Edit2, Check, X } from 'lucide-react';
 
 interface ProjectPageProps {
   params: Promise<{ id: string }>;
@@ -455,7 +455,6 @@ export default function ProjectPage({ params }: ProjectPageProps) {
                               {new Date(note.updated_at).toLocaleDateString(locale === 'fa' ? 'fa-IR' : 'en-US')}
                             </p>
                           </div>
-                          <Calendar className="h-4 w-4 text-gray-400 flex-shrink-0" />
                         </div>
                       </CardContent>
                     </Card>
@@ -584,7 +583,6 @@ export default function ProjectPage({ params }: ProjectPageProps) {
                                 {new Date(note.updated_at).toLocaleDateString(locale === 'fa' ? 'fa-IR' : 'en-US')}
                               </p>
                             </div>
-                            <Calendar className="h-5 w-5 text-gray-400 flex-shrink-0" />
                           </div>
                         </CardContent>
                       </Card>
