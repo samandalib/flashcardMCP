@@ -16,6 +16,26 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* Force Tailwind color variables in production */
+html {
+  --tw-text-opacity: 1;
+  --tw-bg-opacity: 1;
+}
+
+/* Override Tailwind's default gray colors with darker variants */
+html {
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #9ca3af;
+  --color-gray-400: #6b7280;
+  --color-gray-500: #4b5563;
+  --color-gray-600: #374151;
+  --color-gray-700: #1f2937;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
@@ -78,38 +98,99 @@ input, textarea, select {
   }
 }
 
-/* Global text color fixes for better contrast */
-.text-gray-500 {
+/* Global text color fixes for better contrast - Production-safe */
+html body .text-gray-500,
+html body .text-gray-500 * {
   color: #4b5563 !important; /* Darker gray */
 }
 
-.text-gray-600 {
+html body .text-gray-600,
+html body .text-gray-600 * {
   color: #374151 !important; /* Even darker gray */
 }
 
-.text-gray-700 {
+html body .text-gray-700,
+html body .text-gray-700 * {
   color: #1f2937 !important; /* Dark gray */
 }
 
-.text-gray-400 {
+html body .text-gray-400,
+html body .text-gray-400 * {
   color: #6b7280 !important; /* Medium gray */
 }
 
-.text-gray-300 {
+html body .text-gray-300,
+html body .text-gray-300 * {
   color: #9ca3af !important; /* Light gray but still readable */
 }
 
+/* Additional gray text overrides for production */
+html body .text-gray-900,
+html body .text-gray-900 * {
+  color: #111827 !important; /* Very dark gray */
+}
+
+html body .text-gray-800,
+html body .text-gray-800 * {
+  color: #1f2937 !important; /* Dark gray */
+}
+
+html body .text-gray-200,
+html body .text-gray-200 * {
+  color: #e5e7eb !important; /* Light gray */
+}
+
+html body .text-gray-100,
+html body .text-gray-100 * {
+  color: #f3f4f6 !important; /* Very light gray */
+}
+
 /* Ensure all text elements have good contrast */
-p, span, div, h1, h2, h3, h4, h5, h6 {
+html body p,
+html body span,
+html body div,
+html body h1,
+html body h2,
+html body h3,
+html body h4,
+html body h5,
+html body h6 {
   color: inherit;
 }
 
 /* Fix button text colors globally */
-button {
+html body button,
+html body button * {
   color: inherit;
 }
 
 /* Ensure sidebar and navigation text is readable */
-.sidebar-text, .nav-text {
+html body .sidebar-text,
+html body .sidebar-text *,
+html body .nav-text,
+html body .nav-text * {
+  color: #1f2937 !important;
+}
+
+/* Force dark text on light backgrounds */
+html body [class*="bg-white"] *,
+html body [class*="bg-gray-50"] *,
+html body [class*="bg-gray-100"] * {
+  color: #1f2937 !important;
+}
+
+/* Specific overrides for common UI elements */
+html body .card,
+html body .card * {
+  color: #1f2937 !important;
+}
+
+html body .header,
+html body .header * {
+  color: #1f2937 !important;
+}
+
+html body .content,
+html body .content * {
   color: #1f2937 !important;
 }
