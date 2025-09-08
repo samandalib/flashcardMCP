@@ -55,6 +55,7 @@ export default function ProjectDetailPage() {
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [isCreatingNote, setIsCreatingNote] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [mobileView, setMobileView] = useState<'notes' | 'editor'>('notes'); // Mobile view state
 
   const projectId = params.id as string;
 
@@ -154,6 +155,25 @@ export default function ProjectDetailPage() {
     }
   };
 
+  // Mobile navigation handlers
+  const handleNoteSelect = (note: Note) => {
+    setSelectedNote(note);
+    setIsCreatingNote(false);
+    setMobileView('editor'); // Switch to editor view on mobile
+  };
+
+  const handleBackToNotes = () => {
+    setMobileView('notes');
+    setSelectedNote(null);
+    setIsCreatingNote(false);
+  };
+
+  const handleCreateNoteClick = () => {
+    setIsCreatingNote(true);
+    setSelectedNote(null);
+    setMobileView('editor'); // Switch to editor view on mobile
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center" dir={dir}>
@@ -180,7 +200,7 @@ export default function ProjectDetailPage() {
 
   return (
     <div className="bg-gray-50 flex flex-col h-full" dir={dir}>
-      {/* Mobile Sidebar Toggle */}
+      {/* Mobile Header - Single toggle for mobile navigation */}
       <div className="lg:hidden bg-white border-b border-gray-200 p-3">
         <div className="flex items-center justify-between">
           <Button
@@ -192,21 +212,35 @@ export default function ProjectDetailPage() {
             <ArrowLeft className="h-4 w-4" />
             {t.backToProjects}
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="flex items-center gap-2 text-gray-900 hover:text-gray-700"
-          >
-            {isSidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-            {isSidebarOpen ? t.hideSidebar : t.showSidebar}
-          </Button>
+          
+          {/* Mobile View Toggle */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-900">{project.name}</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setMobileView(mobileView === 'notes' ? 'editor' : 'notes')}
+              className="flex items-center gap-2 text-gray-900 hover:text-gray-700"
+            >
+              {mobileView === 'notes' ? (
+                <>
+                  <FileText className="h-4 w-4" />
+                  {selectedNote ? 'Edit Note' : 'Create Note'}
+                </>
+              ) : (
+                <>
+                  <Menu className="h-4 w-4" />
+                  Notes List
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </div>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
-        <div className={`${isSidebarOpen ? 'w-80' : 'w-0'} bg-white border-r border-gray-200 flex flex-col transition-all duration-300 overflow-hidden lg:w-80`}>
+        {/* Desktop Sidebar - Hidden on mobile */}
+        <div className="hidden lg:flex lg:w-80 bg-white border-r border-gray-200 flex-col">
         {/* Header */}
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center gap-2 mb-2">
@@ -233,7 +267,7 @@ export default function ProjectDetailPage() {
               <h2 className="text-sm font-medium text-gray-700">{t.notes}</h2>
               <Button
                 size="sm"
-                onClick={() => setIsCreatingNote(true)}
+                onClick={handleCreateNoteClick}
                 className="flex items-center gap-1"
               >
                 <Plus className="h-3 w-3" />
@@ -247,7 +281,7 @@ export default function ProjectDetailPage() {
                 <p className="text-sm text-gray-500 mb-3">{t.noNotes}</p>
                 <Button
                   size="sm"
-                  onClick={() => setIsCreatingNote(true)}
+                  onClick={handleCreateNoteClick}
                   className="text-blue-600"
                 >
                   {t.createFirstNote}
@@ -263,13 +297,7 @@ export default function ProjectDetailPage() {
                         ? 'bg-blue-50 border-blue-200' 
                         : 'hover:bg-gray-50'
                     }`}
-                    onClick={() => {
-                      console.log('Selected note data:', note);
-                      console.log('Note tabs:', note.tabs);
-                      console.log('Note active_tab:', note.active_tab);
-                      console.log('Note default_tabs:', note.default_tabs);
-                      setSelectedNote(note);
-                    }}
+                    onClick={() => handleNoteSelect(note)}
                   >
                     <CardContent className="p-3">
                       <div className="flex items-start justify-between">
@@ -292,32 +320,162 @@ export default function ProjectDetailPage() {
         </div>
       </div>
 
-      {/* Main Editor Area */}
-      <div className="flex-1 flex flex-col">
-        {/* Editor Header with Sidebar Toggle */}
-        <div className="bg-white border-b border-gray-200 p-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                className="flex items-center gap-2"
-                title={isSidebarOpen ? t.hideSidebar : t.showSidebar}
-              >
-                {isSidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-                <span className="hidden sm:inline">
-                  {isSidebarOpen ? t.hideSidebar : t.showSidebar}
-                </span>
-              </Button>
-            </div>
-            {selectedNote && (
-              <div className="text-sm text-gray-500">
-                {locale === 'fa' ? 'یادداشت انتخاب شده' : 'Selected Note'}
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col min-h-0">
+          {/* Mobile View: Notes List */}
+          {mobileView === 'notes' && (
+            <div className="lg:hidden flex-1 bg-white">
+              <div className="p-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-semibold text-gray-900">{t.notes}</h2>
+                  <Button
+                    size="sm"
+                    onClick={handleCreateNoteClick}
+                    className="flex items-center gap-1"
+                  >
+                    <Plus className="h-4 w-4" />
+                    {t.newNote}
+                  </Button>
+                </div>
+
+                {notes.length === 0 ? (
+                  <div className="text-center py-12">
+                    <FileText className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">{t.noNotes}</h3>
+                    <p className="text-gray-500 mb-4">{t.createFirstNote}</p>
+                    <Button
+                      onClick={handleCreateNoteClick}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      {t.createNewNote}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {notes.map((note) => (
+                      <Card
+                        key={note.id}
+                        className="cursor-pointer transition-colors hover:bg-gray-50"
+                        onClick={() => handleNoteSelect(note)}
+                      >
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-base font-medium text-gray-900 truncate">
+                                {note.title}
+                              </h3>
+                              <p className="text-sm text-gray-500 mt-1">
+                                {new Date(note.updated_at).toLocaleDateString(locale === 'fa' ? 'fa-IR' : 'en-US')}
+                              </p>
+                            </div>
+                            <Calendar className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        </div>
+            </div>
+          )}
+
+          {/* Mobile View: Editor */}
+          {mobileView === 'editor' && (
+            <div className="lg:hidden flex-1 flex flex-col">
+              {/* Mobile Editor Header */}
+              <div className="bg-white border-b border-gray-200 p-3">
+                <div className="flex items-center justify-between">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleBackToNotes}
+                    className="flex items-center gap-2 text-gray-900 hover:text-gray-700"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    Back to Notes
+                  </Button>
+                  <div className="text-sm font-medium text-gray-900">
+                    {selectedNote ? selectedNote.title : 'Create New Note'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Mobile Editor Content */}
+              <div className="flex-1 bg-white">
+                {selectedNote ? (
+                  <div className="h-full">
+                    <TabbedEditor
+                      noteId={selectedNote.id}
+                      initialTabs={selectedNote.tabs}
+                      initialActiveTab={selectedNote.active_tab}
+                      onSave={handleUpdateNoteTabs}
+                    />
+                  </div>
+                ) : isCreatingNote ? (
+                  <div className="h-full">
+                    <TabbedEditor
+                      noteId="new-note"
+                      initialTabs={{
+                        finding: {
+                          content: '',
+                          order: 1,
+                          created_at: new Date().toISOString()
+                        },
+                        evidence: {
+                          content: '',
+                          order: 2,
+                          created_at: new Date().toISOString()
+                        },
+                        details: {
+                          content: '',
+                          order: 3,
+                          created_at: new Date().toISOString()
+                        }
+                      }}
+                      initialActiveTab="finding"
+                      onSave={async (noteId, tabs) => {
+                        const content = tabs.finding?.content || '';
+                        if (content.trim()) {
+                          try {
+                            await handleCreateNote(content);
+                            handleBackToNotes(); // Go back to notes list after creating
+                          } catch (error) {
+                            console.error('Error creating note:', error);
+                            throw error;
+                          }
+                        }
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div className="flex-1 flex items-center justify-center bg-white">
+                    <div className="text-center">
+                      <FileText className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">{t.noNotes}</h3>
+                      <p className="text-gray-500 mb-4">{t.createFirstNote}</p>
+                      <Button
+                        onClick={handleCreateNoteClick}
+                        className="bg-blue-600 hover:bg-blue-700"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        {t.createNewNote}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Desktop View: Editor */}
+          <div className="hidden lg:flex flex-1 flex flex-col min-h-0">
+            {/* Editor Header - Hidden on mobile since we have mobile header above */}
+            <div className="bg-white border-b border-gray-200 p-4">
+              <div className="flex justify-between items-center">
+                <h2 className="text-lg font-semibold text-gray-900">{t.projectNotes}</h2>
+              </div>
+            </div>
 
         {selectedNote || isCreatingNote ? (
           <div className="flex-1">
