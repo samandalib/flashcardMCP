@@ -3,11 +3,15 @@
 :root {
   --background: #ffffff;
   --foreground: #1f2937; /* Darker gray for better contrast */
+  --muted: #374151; /* Darker muted text */
+  --muted-foreground: #4b5563; /* Darker muted foreground */
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -72,4 +76,40 @@ input, textarea, select {
   input, textarea, select {
     font-size: 16px !important;
   }
+}
+
+/* Global text color fixes for better contrast */
+.text-gray-500 {
+  color: #4b5563 !important; /* Darker gray */
+}
+
+.text-gray-600 {
+  color: #374151 !important; /* Even darker gray */
+}
+
+.text-gray-700 {
+  color: #1f2937 !important; /* Dark gray */
+}
+
+.text-gray-400 {
+  color: #6b7280 !important; /* Medium gray */
+}
+
+.text-gray-300 {
+  color: #9ca3af !important; /* Light gray but still readable */
+}
+
+/* Ensure all text elements have good contrast */
+p, span, div, h1, h2, h3, h4, h5, h6 {
+  color: inherit;
+}
+
+/* Fix button text colors globally */
+button {
+  color: inherit;
+}
+
+/* Ensure sidebar and navigation text is readable */
+.sidebar-text, .nav-text {
+  color: #1f2937 !important;
 }
