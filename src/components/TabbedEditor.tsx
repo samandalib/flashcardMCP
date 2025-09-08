@@ -216,7 +216,7 @@ export function TabbedEditor({
                   className={`whitespace-nowrap transition-all duration-200 ${
                     activeTab === tabName 
                       ? `${getTabBackgroundColor(tabName)} ${getTabTextColor(tabName)} border-2` 
-                      : `hover:${getTabBackgroundColor(tabName)} hover:${getTabTextColor(tabName)}`
+                      : `text-gray-900 hover:${getTabBackgroundColor(tabName)} hover:${getTabTextColor(tabName)}`
                   }`}
                 >
                   {getTabDisplayName(tabName)}
@@ -260,12 +260,12 @@ export function TabbedEditor({
                 </Button>
               </div>
             ) : (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowAddTab(true)}
-                className="text-blue-600 hover:text-blue-700"
-              >
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowAddTab(true)}
+                  className="text-blue-600 hover:text-blue-700 text-gray-900"
+                >
                 <Plus className="h-3 w-3 mr-1" />
                 {t.addTab}
               </Button>

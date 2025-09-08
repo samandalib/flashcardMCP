@@ -12,7 +12,7 @@ export function GlobalHeader() {
         <div className="flex justify-between items-center h-12 sm:h-10">
           {/* Logo/Title */}
           <div className="flex items-center flex-1 min-w-0">
-            <h1 className="text-sm sm:text-sm font-medium text-gray-700 truncate">
+            <h1 className="text-sm sm:text-sm font-medium text-gray-900 truncate">
               {locale === 'fa' ? 'سنتزکننده تحقیقات فلش‌کارت' : 'Flashcard Research Synthesizer'}
             </h1>
           </div>

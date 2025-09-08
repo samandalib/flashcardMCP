@@ -187,7 +187,7 @@ export default function ProjectDetailPage() {
             variant="ghost"
             size="sm"
             onClick={() => router.push('/')}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 text-gray-900 hover:text-gray-700"
           >
             <ArrowLeft className="h-4 w-4" />
             {t.backToProjects}
@@ -196,7 +196,7 @@ export default function ProjectDetailPage() {
             variant="ghost"
             size="sm"
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 text-gray-900 hover:text-gray-700"
           >
             {isSidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
             {isSidebarOpen ? t.hideSidebar : t.showSidebar}
