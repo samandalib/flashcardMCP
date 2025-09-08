@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useLocale } from '@/components/LocaleContext';
 import { TabbedEditor } from '@/components/TabbedEditor';
 import { Project, Note } from '@/lib/supabase';
-import { ArrowLeft, Menu, FileText, Plus, Calendar } from 'lucide-react';
+import { ArrowLeft, Menu, FileText, Plus, Calendar, Download } from 'lucide-react';
 
 interface ProjectPageProps {
   params: Promise<{ id: string }>;
@@ -24,7 +24,9 @@ const translations = {
     createNewNote: "Create New Note",
     projectNotes: "Project Notes",
     showSidebar: "Show Sidebar",
-    hideSidebar: "Hide Sidebar"
+    hideSidebar: "Hide Sidebar",
+    downloadNotes: "Download Notes",
+    downloadNotesAsJson: "Download Notes as JSON"
   },
   fa: {
     backToProjects: "بازگشت به پروژه‌ها",
@@ -35,7 +37,9 @@ const translations = {
     createNewNote: "ایجاد یادداشت جدید",
     projectNotes: "یادداشت‌های پروژه",
     showSidebar: "نمایش نوار کناری",
-    hideSidebar: "مخفی کردن نوار کناری"
+    hideSidebar: "مخفی کردن نوار کناری",
+    downloadNotes: "دانلود یادداشت‌ها",
+    downloadNotesAsJson: "دانلود یادداشت‌ها به صورت JSON"
   }
 };
 
@@ -161,6 +165,46 @@ export default function ProjectPage({ params }: ProjectPageProps) {
     setMobileView('editor');
   };
 
+  const handleDownloadNotes = () => {
+    if (!project || notes.length === 0) {
+      return;
+    }
+
+    const exportData = {
+      project: {
+        id: project.id,
+        name: project.name,
+        description: project.description,
+        created_at: project.created_at,
+        updated_at: project.updated_at
+      },
+      notes: notes.map(note => ({
+        id: note.id,
+        title: note.title,
+        content: note.content,
+        tabs: note.tabs,
+        active_tab: note.active_tab,
+        default_tabs: note.default_tabs,
+        created_at: note.created_at,
+        updated_at: note.updated_at
+      })),
+      exported_at: new Date().toISOString(),
+      total_notes: notes.length
+    };
+
+    const jsonString = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${project.name.replace(/[^a-zA-Z0-9]/g, '_')}_notes.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center" dir={dir}>
@@ -243,6 +287,19 @@ export default function ProjectPage({ params }: ProjectPageProps) {
             {project.description && (
               <p className="text-sm text-gray-600 mt-1">{project.description}</p>
             )}
+            {notes.length > 0 && (
+              <div className="mt-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDownloadNotes}
+                  className="flex items-center gap-2 text-gray-700 hover:text-gray-900"
+                >
+                  <Download className="h-4 w-4" />
+                  {t.downloadNotes}
+                </Button>
+              </div>
+            )}
           </div>
 
           <div className="flex-1 overflow-y-auto">
@@ -312,14 +369,27 @@ export default function ProjectPage({ params }: ProjectPageProps) {
               <div className="p-4">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-lg font-semibold text-gray-900">{t.notes}</h2>
-                  <Button
-                    size="sm"
-                    onClick={handleCreateNoteClick}
-                    className="flex items-center gap-1"
-                  >
-                    <Plus className="h-4 w-4" />
-                    {t.newNote}
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    {notes.length > 0 && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleDownloadNotes}
+                        className="flex items-center gap-1 text-gray-700 hover:text-gray-900"
+                      >
+                        <Download className="h-4 w-4" />
+                        {t.downloadNotes}
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      onClick={handleCreateNoteClick}
+                      className="flex items-center gap-1"
+                    >
+                      <Plus className="h-4 w-4" />
+                      {t.newNote}
+                    </Button>
+                  </div>
                 </div>
 
                 {notes.length === 0 ? (
