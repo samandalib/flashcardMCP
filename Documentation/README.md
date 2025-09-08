@@ -11,23 +11,26 @@ This folder contains all product documentation, requirements, and architectural 
 
 ## Quick Links
 
-### Current Documentation (v0.2)
-- [**Current PRD (v0.2)**](./PRD/v0.2-current.md) - Reflects implemented Apple Notes-style editor
+### Current Documentation (v0.3)
+- [**Current State Summary**](./CURRENT_STATE.md) - Working implementation overview
+- [**Current PRD (v0.3)**](./PRD/v0.3-current.md) - Reflects implemented TabbedEditor with auto-save
 - [**Implementation Guide**](./Technical/implementation-guide.md) - Technical implementation details
 - [**Stack Decisions**](./Architecture/stack-decisions.md) - Architecture choices and rationale
 - [**Changelog**](./Changelog.md) - Complete evolution history
 
 ### Historical Documentation
-- [Original PRD (v0)](./PRD/v0-original.md) - Initial flashcard concept
+- [Previous PRD (v0.2)](./PRD/v0.2-current.md) - Rich text editor implementation
 - [Previous PRD (v0.1)](./PRD/current.md) - Intermediate version
+- [Original PRD (v0)](./PRD/v0-original.md) - Initial flashcard concept
 
-## Current Status (v0.2 - January 16, 2025)
+## Current Status (v0.3 - January 16, 2025)
 
 ### ✅ Implemented Features
-- **Apple Notes-style Rich Text Editor** - contentEditable with formatting toolbar
+- **Tabbed Note Editor** - Multi-tab interface with Finding/Evidence/Details tabs
+- **Auto-save Functionality** - 2-second debounced content persistence
 - **Project-based Organization** - Notes grouped under projects
 - **Bilingual Support** - English/Farsi with proper RTL/LTR text direction
-- **Auto-save Functionality** - Debounced content persistence
+- **Tab Management** - Add/delete custom tabs with visual feedback
 - **Responsive Design** - Mobile-friendly interface
 - **Complete CRUD Operations** - Projects and notes management
 

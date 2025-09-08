@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -61,6 +61,7 @@ export function TabbedEditor({
   const [hasChanges, setHasChanges] = useState(false);
   const [newTabName, setNewTabName] = useState('');
   const [showAddTab, setShowAddTab] = useState(false);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Initialize with default tabs if none exist
   useEffect(() => {
@@ -87,6 +88,15 @@ export function TabbedEditor({
     }
   }, [tabs]);
 
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const handleTabContentChange = (tabName: string, content: string) => {
     setTabs(prev => ({
       ...prev,
@@ -96,6 +106,15 @@ export function TabbedEditor({
       }
     }));
     setHasChanges(true);
+
+    // Clear existing timeout and set new one for auto-save
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    
+    saveTimeoutRef.current = setTimeout(() => {
+      handleSave();
+    }, 2000);
   };
 
   const handleSave = async () => {
@@ -285,15 +304,7 @@ export function TabbedEditor({
                 {t.saved}
               </span>
             )}
-            <Button
-              onClick={handleSave}
-              disabled={!hasChanges || isSaving}
-              size="sm"
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              <Save className="h-3 w-3 mr-1" />
-              {isSaving ? t.saving : t.save}
-            </Button>
+            {/* Save button removed - auto-save is now active */}
           </div>
         </div>
       </div>

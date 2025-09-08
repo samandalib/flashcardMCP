@@ -129,27 +129,53 @@ export default function ProjectPage({ params }: ProjectPageProps) {
 
   const handleUpdateNoteTabs = async (noteId: string, tabs: Record<string, object>, activeTab: string) => {
     try {
-      const response = await fetch(`/api/notes/${noteId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          tabs: tabs,
-          active_tab: activeTab
-        }),
-      });
+      if (noteId === 'new-note' || noteId === 'new') {
+        // Create a new note
+        const response = await fetch(`/api/projects/${projectId}/notes`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            title: 'Untitled Note',
+            tabs: tabs,
+            active_tab: activeTab
+          }),
+        });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to update note');
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to create note');
+        }
+
+        const data = await response.json();
+        setNotes(prev => [data.note, ...prev]);
+        setSelectedNote(data.note);
+        setIsCreatingNote(false);
+      } else {
+        // Update existing note
+        const response = await fetch(`/api/notes/${noteId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            tabs: tabs,
+            active_tab: activeTab
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to update note');
+        }
+
+        const data = await response.json();
+        setNotes(prev => prev.map(note => note.id === noteId ? data.note : note));
+        setSelectedNote(data.note);
       }
-
-      const data = await response.json();
-      setNotes(prev => prev.map(note => note.id === noteId ? data.note : note));
-      setSelectedNote(data.note);
     } catch (error) {
-      console.error('Error updating note tabs:', error);
+      console.error('Error saving note:', error);
       throw error;
     }
   };
@@ -645,18 +671,7 @@ export default function ProjectPage({ params }: ProjectPageProps) {
                         }
                       }}
                       initialActiveTab="finding"
-                      onSave={async (noteId, tabs) => {
-                        const content = tabs.finding?.content || '';
-                        if (content.trim()) {
-                          try {
-                            await handleCreateNote(content);
-                            handleBackToNotes();
-                          } catch (error) {
-                            console.error('Error creating note:', error);
-                            throw error;
-                          }
-                        }
-                      }}
+                      onSave={handleUpdateNoteTabs}
                     />
                   </div>
                 ) : (
@@ -720,17 +735,7 @@ export default function ProjectPage({ params }: ProjectPageProps) {
                         }
                       }}
                       initialActiveTab="finding"
-                      onSave={async (noteId, tabs) => {
-                        const content = tabs.finding?.content || '';
-                        if (content.trim()) {
-                          try {
-                            await handleCreateNote(content);
-                          } catch (error) {
-                            console.error('Error creating note:', error);
-                            throw error;
-                          }
-                        }
-                      }}
+                      onSave={handleUpdateNoteTabs}
                     />
                   </div>
                 )}

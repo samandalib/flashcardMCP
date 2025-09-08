@@ -1,12 +1,12 @@
-# Implementation Guide - Flashcard Research Synthesizer
+# Implementation Guide - Research Note Synthesizer
 
-**Version:** v1.0 (Clean Serverless Architecture)  
+**Version:** v1.1 (TabbedEditor with Auto-Save)  
 **Last Updated:** January 16, 2025  
 **Audience:** Developers, Technical Contributors
 
 ## Overview
 
-This guide documents the technical implementation details, key components, and development patterns used in the Flashcard Research Synthesizer application. The application has been completely rewritten with a clean serverless architecture using Next.js 15.
+This guide documents the technical implementation details, key components, and development patterns used in the Research Note Synthesizer application. The application uses a hybrid architecture with Next.js 15 frontend and Express.js backend, featuring a tabbed note editor with auto-save functionality.
 
 ---
 
@@ -14,25 +14,31 @@ This guide documents the technical implementation details, key components, and d
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                Next.js 15 Application                   │
+│                Next.js 15 Frontend                      │
 │                                                         │
 │  ┌─────────────────┐    ┌─────────────────┐           │
-│  │   Frontend      │    │   API Routes    │           │
-│  │   (React)       │◄──►│   (Serverless)  │◄─────────►│
-│  │                 │    │                 │           │
-│  │ • TypeScript    │    │ • TypeScript    │           │
-│  │ • Tailwind CSS  │    │ • Input Validation│         │
-│  │ • Radix UI      │    │ • Error Handling│           │
-│  │ • i18n Support  │    │ • Type Safety   │           │
+│  │   Components    │    │   API Calls     │           │
+│  │                 │◄──►│                 │◄─────────►│
+│  │ • TabbedEditor  │    │ • Fetch API     │           │
+│  │ • Project Pages │    │ • HTTP Requests │           │
+│  │ • LocaleContext │    │ • Error Handling│           │
 │  └─────────────────┘    └─────────────────┘           │
 │                                                         │
 │  ┌─────────────────────────────────────────────────────┐│
-│  │              Supabase Integration                   ││
+│  │              Express.js Backend                     ││
+│  │                                                     ││
+│  │ • RESTful API Routes                                ││
+│  │ • Supabase Integration                              ││
+│  │ • Input Validation                                  ││
+│  │ • Error Handling                                    ││
+│  └─────────────────────────────────────────────────────┘│
+│                                                         │
+│  ┌─────────────────────────────────────────────────────┐│
+│  │              Supabase Database                      ││
 │  │                                                     ││
 │  │ • PostgreSQL Database                               ││
 │  │ • Row Level Security                                ││
-│  │ • File Storage (Future)                             ││
-│  │ • Real-time Subscriptions (Future)                 ││
+│  │ • Real-time Capabilities                            ││
 │  └─────────────────────────────────────────────────────┘│
 └─────────────────────────────────────────────────────────┘
 ```
@@ -41,73 +47,112 @@ This guide documents the technical implementation details, key components, and d
 
 ## Key Components
 
-### 1. Rich Text Editor (`RichTextEditor.tsx`)
+### 1. TabbedEditor (`src/components/TabbedEditor.tsx`)
 
-**Purpose:** Apple Notes-style contentEditable rich text editor
+**Purpose:** Multi-tab note editor with auto-save functionality
 
 **Key Features:**
-- contentEditable with custom formatting toolbar
-- Bilingual text direction support (RTL/LTR)
-- Auto-save functionality with debouncing
-- Media insertion placeholders
-- Keyboard shortcuts (Ctrl+S for save)
+- Multiple tabs (Finding, Evidence, Details) with custom tab support
+- Auto-save with 2-second debouncing
+- Visual save status indicators
+- Tab management (add/delete custom tabs)
+- Bilingual support with proper text direction
 
 **Implementation Details:**
 ```typescript
 // Core structure
-const RichTextEditor = ({ onSave, initialContent, placeholder }) => {
-  const { locale, dir } = useLocale();
-  const [content, setContent] = useState(initialContent);
-  const [isSaving, setIsSaving] = useState(false);
+const TabbedEditor = ({ 
+  noteId, 
+  initialTabs = {}, 
+  initialActiveTab = 'finding',
+  onSave,
+  isSaving = false 
+}) => {
+  const [tabs, setTabs] = useState<NoteTabs>(initialTabs);
+  const [activeTab, setActiveTab] = useState<string>(initialActiveTab);
   const [hasChanges, setHasChanges] = useState(false);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Direction handling
-  const editorDirection = locale === 'fa' ? 'rtl' : 'ltr';
-  
   // Auto-save with debouncing
-  const handleSave = useCallback(async () => {
-    if (!hasChanges) return;
+  const handleTabContentChange = (tabName: string, content: string) => {
+    setTabs(prev => ({
+      ...prev,
+      [tabName]: {
+        ...prev[tabName],
+        content
+      }
+    }));
+    setHasChanges(true);
+
+    // Clear existing timeout and set new one
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
     
-    setIsSaving(true);
+    saveTimeoutRef.current = setTimeout(() => {
+      handleSave();
+    }, 2000);
+  };
+
+  const handleSave = async () => {
     try {
-      await onSave(content);
+      await onSave(noteId, tabs, activeTab);
       setHasChanges(false);
     } catch (error) {
-      console.error('Error saving content:', error);
-    } finally {
-      setIsSaving(false);
+      console.error('Error saving tabs:', error);
     }
-  }, [hasChanges, content, onSave]);
-  
-  // Content editing
-  const handleContentChange = (value: string) => {
-    setContent(value);
-    setHasChanges(value !== initialContent);
   };
 };
 ```
 
-**Key Technical Decisions:**
-- Uses `contentEditable` instead of Draft.js/Slate for simplicity
-- HTML content storage for full formatting preservation
-- Multiple direction enforcement strategies for RTL/LTR
-- Composition event handling for IME input support
+**Tab Structure:**
+```typescript
+interface NoteTab {
+  content: string
+  order: number
+  created_at: string
+}
 
-### 2. Project Detail Page (`app/project/[id]/page.tsx`)
+interface NoteTabs {
+  [tabName: string]: NoteTab
+}
 
-**Purpose:** Main interface combining notes sidebar with rich text editor
+// Default tabs
+const defaultTabs: NoteTabs = {
+  finding: {
+    content: '',
+    order: 1,
+    created_at: new Date().toISOString()
+  },
+  evidence: {
+    content: '',
+    order: 2,
+    created_at: new Date().toISOString()
+  },
+  details: {
+    content: '',
+    order: 3,
+    created_at: new Date().toISOString()
+  }
+};
+```
+
+### 2. Project Detail Page (`src/app/project/[id]/page.tsx`)
+
+**Purpose:** Main interface combining notes sidebar with tabbed editor
 
 **Layout Structure:**
 ```
 ┌─────────────────────────────────────────────────────────┐
 │ Header (Back button, Project name)                     │
 ├─────────────────┬───────────────────────────────────────┤
-│ Notes Sidebar   │ Rich Text Editor                      │
+│ Notes Sidebar   │ TabbedEditor                          │
 │                 │                                       │
-│ • Notes List    │ • Formatting Toolbar                 │
-│ • Create Button │ • contentEditable Area               │
-│ • Search (TBD)  │ • Auto-save Status                   │
-│                 │                                       │
+│ • Notes List    │ • Tab Navigation (Finding/Evidence/  │
+│ • Create Button │   Details + Custom Tabs)              │
+│ • Search (TBD)  │ • Textarea Content Areas             │
+│                 │ • Auto-save Status Indicators         │
+│                 │ • Add/Delete Tab Controls             │
 └─────────────────┴───────────────────────────────────────┘
 ```
 
@@ -117,9 +162,52 @@ const [project, setProject] = useState<Project | null>(null);
 const [notes, setNotes] = useState<Note[]>([]);
 const [selectedNote, setSelectedNote] = useState<Note | null>(null);
 const [isCreatingNote, setIsCreatingNote] = useState(false);
+const [mobileView, setMobileView] = useState<'notes' | 'editor'>('notes');
 ```
 
-### 3. Locale Context (`LocaleContext.tsx`)
+**Save Handler:**
+```typescript
+const handleUpdateNoteTabs = async (noteId: string, tabs: Record<string, object>, activeTab: string) => {
+  try {
+    if (noteId === 'new-note' || noteId === 'new') {
+      // Create a new note
+      const response = await fetch(`/api/projects/${projectId}/notes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'Untitled Note',
+          tabs: tabs,
+          active_tab: activeTab
+        }),
+      });
+      
+      const data = await response.json();
+      setNotes(prev => [data.note, ...prev]);
+      setSelectedNote(data.note);
+      setIsCreatingNote(false);
+    } else {
+      // Update existing note
+      const response = await fetch(`/api/notes/${noteId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tabs: tabs,
+          active_tab: activeTab
+        }),
+      });
+      
+      const data = await response.json();
+      setNotes(prev => prev.map(note => note.id === noteId ? data.note : note));
+      setSelectedNote(data.note);
+    }
+  } catch (error) {
+    console.error('Error saving note:', error);
+    throw error;
+  }
+};
+```
+
+### 3. Locale Context (`src/components/LocaleContext.tsx`)
 
 **Purpose:** Global language and text direction management
 
@@ -157,7 +245,7 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
 }
 ```
 
-### 4. Supabase Integration (`lib/supabase.ts`)
+### 4. Supabase Integration (`src/lib/supabase.ts`)
 
 **Purpose:** Centralized database client and type definitions
 
@@ -179,11 +267,24 @@ export interface Project {
   updated_at: string
 }
 
+export interface NoteTab {
+  content: string
+  order: number
+  created_at: string
+}
+
+export interface NoteTabs {
+  [tabName: string]: NoteTab
+}
+
 export interface Note {
   id: string
   project_id: string
   title: string
   content: string
+  tabs?: NoteTabs
+  active_tab?: string
+  default_tabs?: string[]
   created_at: string
   updated_at: string
 }
@@ -191,105 +292,73 @@ export interface Note {
 
 ---
 
-## API Routes Architecture
+## Backend API Architecture
 
-### RESTful Endpoints
+### Express.js Server (`backend/server.js`)
+
+**Purpose:** RESTful API server handling database operations
+
+**Key Features:**
+- Supabase integration for database operations
+- Input validation and error handling
+- CORS configuration for frontend communication
+- Environment variable management
+
+**API Endpoints:**
 
 **Projects:**
 ```
 GET    /api/projects          # List all projects
 POST   /api/projects          # Create new project
+GET    /api/projects/:id      # Get project details
 ```
 
 **Notes:**
 ```
-GET    /api/projects/[id]/notes    # List project notes
-POST   /api/projects/[id]/notes    # Create new note
-PUT    /api/notes/[id]             # Update existing note
-DELETE /api/notes/[id]             # Delete note
+GET    /api/projects/:id/notes    # List project notes
+POST   /api/projects/:id/notes    # Create new note
+PUT    /api/notes/:id             # Update existing note
+DELETE /api/notes/:id             # Delete note
 ```
 
-### API Route Implementation Example
-
-```typescript
-// /api/projects/route.ts
-import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
-
-// GET /api/projects - List all projects
-export async function GET() {
+**Implementation Example:**
+```javascript
+// POST /api/projects/:id/notes - Create new note
+app.post('/api/projects/:id/notes', async (req, res) => {
   try {
-    const { data, error } = await supabase
-      .from('projects')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Supabase error:', error);
-      return NextResponse.json({ error: 'Failed to fetch projects' }, { status: 500 });
-    }
-
-    return NextResponse.json({ projects: data || [] });
-  } catch (error) {
-    console.error('Unexpected error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}
-
-// POST /api/projects - Create a new project
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const { name, description } = body;
+    const { id } = req.params;
+    const { title, tabs, active_tab } = req.body;
 
     // Validate input
-    if (!name || typeof name !== 'string' || name.trim().length < 1) {
-      return NextResponse.json({
-        error: 'Project name is required and must be a non-empty string'
-      }, { status: 400 });
+    if (!title || typeof title !== 'string' || title.trim().length < 1) {
+      return res.status(400).json({
+        error: 'Note title is required and must be a non-empty string'
+      });
     }
 
-    if (name.trim().length > 100) {
-      return NextResponse.json({
-        error: 'Project name must be less than 100 characters'
-      }, { status: 400 });
-    }
-
+    // Create note with tabs
     const { data, error } = await supabase
-      .from('projects')
+      .from('notes')
       .insert({
-        name: name.trim(),
-        description: description?.trim() || null
+        project_id: id,
+        title: title.trim(),
+        tabs: tabs || {},
+        active_tab: active_tab || 'finding'
       })
       .select()
       .single();
 
     if (error) {
       console.error('Supabase error:', error);
-      return NextResponse.json({ error: 'Failed to create project' }, { status: 500 });
+      return res.status(500).json({ error: 'Failed to create note' });
     }
 
-    return NextResponse.json({ project: data }, { status: 201 });
+    res.status(201).json({ note: data });
   } catch (error) {
     console.error('Unexpected error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    res.status(500).json({ error: 'Internal server error' });
   }
-}
-```
-
-### Next.js 15 Compatibility
-
-**Important:** All API routes use the new Next.js 15 parameter handling:
-
-```typescript
-// Correct for Next.js 15
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params; // Must await params
-  // ... rest of implementation
-}
+});
 ```
 
 ---
@@ -316,6 +385,8 @@ CREATE TABLE notes (
   project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
   title VARCHAR(200) NOT NULL DEFAULT 'Untitled Note',
   content TEXT NOT NULL DEFAULT '',
+  tabs JSONB, -- Store tab structure as JSON
+  active_tab VARCHAR(50) DEFAULT 'finding',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -323,6 +394,7 @@ CREATE TABLE notes (
 -- Indexes for performance
 CREATE INDEX idx_notes_project_id ON notes(project_id);
 CREATE INDEX idx_notes_updated_at ON notes(updated_at DESC);
+CREATE INDEX idx_notes_tabs ON notes USING GIN (tabs);
 ```
 
 ### Row Level Security (RLS)
@@ -342,99 +414,58 @@ CREATE POLICY "Allow all operations on notes" ON notes
 
 ---
 
-## Development Patterns
+## Auto-Save Implementation
 
-### 1. Error Handling Pattern
+### Debounced Auto-Save Pattern
 
-**Frontend:**
 ```typescript
-const fetchProjects = async () => {
-  try {
-    setIsLoading(true);
-    setError(null);
-    
-    const response = await fetch('/api/projects');
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+// TabbedEditor auto-save implementation
+const handleTabContentChange = (tabName: string, content: string) => {
+  setTabs(prev => ({
+    ...prev,
+    [tabName]: {
+      ...prev[tabName],
+      content
     }
-    
-    const data = await response.json();
-    setProjects(data.projects || []);
-  } catch (error) {
-    console.error('Error fetching projects:', error);
-    setError('Failed to load projects. Please try again.');
-  } finally {
-    setIsLoading(false);
+  }));
+  setHasChanges(true);
+
+  // Clear existing timeout and set new one
+  if (saveTimeoutRef.current) {
+    clearTimeout(saveTimeoutRef.current);
   }
+  
+  saveTimeoutRef.current = setTimeout(() => {
+    handleSave();
+  }, 2000);
 };
-```
 
-**API Routes:**
-```typescript
-export async function GET() {
-  try {
-    const { data, error } = await supabase
-      .from('projects')
-      .select('*')
-      .order('updated_at', { ascending: false });
-
-    if (error) {
-      console.error('Supabase error:', error);
-      return NextResponse.json({ error: 'Failed to fetch projects' }, { status: 500 });
-    }
-
-    return NextResponse.json({ projects: data || [] });
-  } catch (error) {
-    console.error('Unexpected error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}
-```
-
-### 2. State Management Pattern
-
-**Component State:**
-```typescript
-// Loading states
-const [isLoading, setIsLoading] = useState(true);
-const [error, setError] = useState<string | null>(null);
-
-// Data states
-const [projects, setProjects] = useState<Project[]>([]);
-const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-
-// UI states
-const [isCreatingProject, setIsCreatingProject] = useState(false);
-```
-
-### 3. Auto-save Implementation
-
-```typescript
-// Debounced auto-save
-const handleSave = useCallback(async () => {
-  if (!hasChanges || !content) return;
-  
-  setIsSaving(true);
-  
-  try {
-    await onSave(content);
-    setLastSaved(new Date());
-    setIsDirty(false);
-  } catch (error) {
-    console.error('Save failed:', error);
-  } finally {
-    setIsSaving(false);
-  }
-}, [hasChanges, content, onSave]);
-
-// Auto-save triggers
+// Cleanup timeout on unmount
 useEffect(() => {
-  if (hasChanges) {
-    const timer = setTimeout(handleSave, 2000); // 2 second delay
-    return () => clearTimeout(timer);
-  }
-}, [hasChanges, handleSave]);
+  return () => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+  };
+}, []);
+```
+
+### Save Status Indicators
+
+```typescript
+// Visual feedback for save status
+{hasChanges && (
+  <span className="text-sm text-orange-600 flex items-center gap-1">
+    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+    {t.unsavedChanges}
+  </span>
+)}
+{!hasChanges && (
+  <span className="text-sm text-green-600 flex items-center gap-1">
+    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+    {t.saved}
+  </span>
+)}
 ```
 
 ---
@@ -446,7 +477,7 @@ useEffect(() => {
 1. **HTML Attributes:**
 ```tsx
 <div dir={editorDirection}>
-  <div contentEditable dir={editorDirection}>
+  <textarea dir={editorDirection} />
 ```
 
 2. **CSS Properties:**
@@ -471,24 +502,119 @@ const editorDirection = locale === 'fa' ? 'rtl' : 'ltr';
 
 ---
 
+## Development Patterns
+
+### 1. Error Handling Pattern
+
+**Frontend:**
+```typescript
+const handleSave = async () => {
+  try {
+    await onSave(noteId, tabs, activeTab);
+    setHasChanges(false);
+  } catch (error) {
+    console.error('Error saving tabs:', error);
+    // Show user-friendly error message
+  }
+};
+```
+
+**Backend:**
+```javascript
+app.post('/api/projects/:id/notes', async (req, res) => {
+  try {
+    // ... validation and database operations
+    
+    if (error) {
+      console.error('Supabase error:', error);
+      return res.status(500).json({ error: 'Failed to create note' });
+    }
+
+    res.status(201).json({ note: data });
+  } catch (error) {
+    console.error('Unexpected error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+```
+
+### 2. State Management Pattern
+
+**Component State:**
+```typescript
+// Loading states
+const [isLoading, setIsLoading] = useState(true);
+const [error, setError] = useState<string | null>(null);
+
+// Data states
+const [tabs, setTabs] = useState<NoteTabs>(initialTabs);
+const [activeTab, setActiveTab] = useState<string>(initialActiveTab);
+
+// UI states
+const [hasChanges, setHasChanges] = useState(false);
+const [isCreatingNote, setIsCreatingNote] = useState(false);
+```
+
+### 3. Tab Management Pattern
+
+```typescript
+// Add custom tab
+const addCustomTab = () => {
+  if (newTabName.trim()) {
+    const tabName = newTabName.trim().toLowerCase().replace(/\s+/g, '_');
+    const maxOrder = Math.max(...Object.values(tabs).map(tab => tab.order));
+    
+    setTabs(prev => ({
+      ...prev,
+      [tabName]: {
+        content: '',
+        order: maxOrder + 1,
+        created_at: new Date().toISOString()
+      }
+    }));
+    
+    setActiveTab(tabName);
+    setNewTabName('');
+    setShowAddTab(false);
+    setHasChanges(true);
+  }
+};
+
+// Delete custom tab
+const deleteTab = (tabName: string) => {
+  if (Object.keys(tabs).length <= 1) return; // Don't delete the last tab
+  
+  const newTabs = { ...tabs };
+  delete newTabs[tabName];
+  setTabs(newTabs);
+  
+  if (activeTab === tabName) {
+    const remainingTabs = Object.keys(newTabs);
+    setActiveTab(remainingTabs[0]);
+  }
+  
+  setHasChanges(true);
+};
+```
+
+---
+
 ## Performance Considerations
 
-### 1. Serverless Optimizations
-- **Cold Start Mitigation**: Optimized imports and minimal dependencies
-- **Function Size**: Keep API routes lightweight
-- **Connection Pooling**: Supabase handles connection management
-- **Edge Functions**: Future consideration for global performance
+### 1. Auto-Save Optimizations
+- **Debouncing**: Prevents excessive API calls during typing
+- **Timeout Management**: Proper cleanup to prevent memory leaks
+- **Change Detection**: Only save when content actually changes
 
 ### 2. Frontend Optimizations
-- **Debounced Operations**: Auto-save with 2-second delay
 - **Optimized Re-renders**: `useCallback` and `useMemo` usage
 - **Code Splitting**: Route-based splitting with Next.js
-- **Image Optimization**: Next.js Image component (future)
+- **State Management**: Minimal state updates
 
 ### 3. Database Optimizations
 - **Indexes**: Proper indexing on frequently queried columns
 - **Query Optimization**: Select only needed fields
-- **Connection Management**: Supabase handles connection pooling
+- **JSON Storage**: Efficient tab structure storage
 
 ---
 
@@ -506,7 +632,7 @@ const editorDirection = locale === 'fa' ? 'rtl' : 'ltr';
 - **CORS**: Configured for production domains
 
 ### 3. Environment Variables
-- **Secure Storage**: Environment variables in Vercel
+- **Secure Storage**: Environment variables in deployment platform
 - **Gitignore**: Proper `.gitignore` configuration
 - **Type Safety**: Environment variable validation
 
@@ -514,36 +640,34 @@ const editorDirection = locale === 'fa' ? 'rtl' : 'ltr';
 
 ## Deployment Guide
 
-### Vercel Deployment (Recommended)
-
-1. **Connect Repository**
-   - Connect GitHub repository to Vercel
-   - Automatic deployments on push to main branch
-
-2. **Environment Variables**
-   ```
-   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-   ```
-
-3. **Build Configuration**
-   - Build Command: `npm run build`
-   - Output Directory: `.next`
-   - Install Command: `npm install`
-
-4. **Deploy**
-   - Vercel automatically builds and deploys
-   - Edge functions for global performance
-
-### Manual Deployment
+### Development Setup
 
 ```bash
-# Build the application
-npm run build
+# Install dependencies
+npm install
 
-# Start production server
-npm start
+# Set up environment
+cp backend/env.example backend/.env
+# Edit backend/.env with your Supabase credentials
+
+# Start backend server
+cd backend && npm start
+
+# Start frontend (in separate terminal)
+cd frontend && npm run dev
 ```
+
+### Production Deployment
+
+**Backend (Express.js):**
+- Deploy to platforms like Railway, Render, or Heroku
+- Set environment variables for Supabase credentials
+- Configure CORS for frontend domain
+
+**Frontend (Next.js):**
+- Deploy to Vercel, Netlify, or similar platforms
+- Configure environment variables
+- Set up custom domain if needed
 
 ### Database Setup (Supabase)
 
@@ -567,14 +691,16 @@ npm start
 ### Local Development
 
 ```bash
-# Install dependencies
+# Backend development
+cd backend
 npm install
+cp env.example .env
+# Edit .env with Supabase credentials
+npm start
 
-# Set up environment
-cp env.example .env.local
-# Edit .env.local with your Supabase credentials
-
-# Start development server
+# Frontend development (separate terminal)
+cd frontend
+npm install
 npm run dev
 ```
 
@@ -607,4 +733,4 @@ npm run dev
 
 ---
 
-*This implementation guide reflects the clean serverless architecture implemented in January 2025. It will be updated as the application evolves and new patterns emerge.*
+*This implementation guide reflects the current TabbedEditor implementation with auto-save functionality as of January 16, 2025. It will be updated as the application evolves and new patterns emerge.*

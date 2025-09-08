@@ -4,6 +4,41 @@ All notable changes to the product requirements and architecture decisions will 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [v1.1] - 2025-01-16
+
+### Added
+- **TabbedEditor Component** - Multi-tab note editor with Finding/Evidence/Details tabs
+- **Auto-save System** - 2-second debounced content persistence
+- **Tab Management** - Add/delete custom tabs functionality
+- **Visual Save Indicators** - Orange dot for unsaved changes, green dot for saved
+- **Tab Structure Storage** - JSON-based tab content storage in database
+- **Custom Tab Support** - User-defined tabs with ordering and persistence
+
+### Changed
+- **Note Editor:** Replaced RichTextEditor with TabbedEditor for structured content
+- **Save Mechanism:** Removed manual save button, implemented automatic saving
+- **Content Structure:** Changed from HTML content to structured tab-based content
+- **Database Schema:** Added JSONB tabs field for tab structure storage
+- **API Endpoints:** Updated to handle tab-based content structure
+
+### Fixed
+- **Multiple Note Creation Bug** - Fixed debouncing to prevent duplicate note creation
+- **Save Button Removal** - Completely removed manual save button from interface
+- **Tab Content Display** - Fixed JSON display issue, now shows proper tab content
+- **Auto-save Logic** - Simplified implementation with proper timeout management
+- **Database Integration** - Restored working API format for tab storage
+
+### Technical Decisions
+- **Tabbed Interface:** Chose structured tabs over free-form rich text for research notes
+- **Auto-save Implementation:** Simple setTimeout-based debouncing for reliability
+- **Content Storage:** JSON structure in database for flexible tab management
+- **Save Feedback:** Visual indicators instead of manual save button for better UX
+
+### Removed
+- **Manual Save Button** - Replaced with automatic saving
+- **Rich Text Editor** - Replaced with simpler tabbed textarea interface
+- **Complex Debouncing** - Simplified to basic timeout-based auto-save
+
 ## [v1.0] - 2025-01-16
 
 ### Added

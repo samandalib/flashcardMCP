@@ -61,9 +61,10 @@ export async function POST(
       }, { status: 400 });
     }
 
-    if (!content || typeof content !== 'string') {
+    // Content is optional if tabs are provided
+    if (content !== undefined && typeof content !== 'string') {
       return NextResponse.json({
-        error: 'Note content is required'
+        error: 'Note content must be a string'
       }, { status: 400 });
     }
 
@@ -86,13 +87,15 @@ export async function POST(
       }
     };
 
-    // Set initial content in the finding tab
-    defaultTabs.finding.content = content.trim();
+    // Set initial content in the finding tab if content is provided
+    if (content) {
+      defaultTabs.finding.content = content.trim();
+    }
 
     const noteData = {
       project_id: projectId,
       title: title.trim(),
-      content: content.trim(),
+      content: content ? content.trim() : '',
       tabs: tabs || defaultTabs,
       active_tab: active_tab || 'finding',
       default_tabs: ['finding', 'evidence', 'details']
