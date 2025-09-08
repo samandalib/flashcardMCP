@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useLocale } from '@/components/LocaleContext';
 import { TabbedEditor } from '@/components/TabbedEditor';
 import { Project, Note } from '@/lib/supabase';
-import { ArrowLeft, Menu, FileText, Plus, Download, Edit2, Check, X } from 'lucide-react';
+import { ArrowLeft, Menu, FileText, Plus, Download, Edit2, Check, X, Trash2 } from 'lucide-react';
 
 interface ProjectPageProps {
   params: Promise<{ id: string }>;
@@ -29,7 +29,12 @@ const translations = {
     downloadNotesAsJson: "Download Notes as JSON",
     editTitle: "Edit Title",
     saveTitle: "Save",
-    cancelEdit: "Cancel"
+    cancelEdit: "Cancel",
+    deleteNote: "Delete Note",
+    confirmDelete: "Are you sure you want to delete this note?",
+    confirmDeleteDescription: "This action cannot be undone.",
+    delete: "Delete",
+    cancel: "Cancel"
   },
   fa: {
     backToProjects: "بازگشت به پروژه‌ها",
@@ -45,7 +50,12 @@ const translations = {
     downloadNotesAsJson: "دانلود یادداشت‌ها به صورت JSON",
     editTitle: "ویرایش عنوان",
     saveTitle: "ذخیره",
-    cancelEdit: "لغو"
+    cancelEdit: "لغو",
+    deleteNote: "حذف یادداشت",
+    confirmDelete: "آیا مطمئن هستید که می‌خواهید این یادداشت را حذف کنید؟",
+    confirmDeleteDescription: "این عمل قابل بازگشت نیست.",
+    delete: "حذف",
+    cancel: "لغو"
   }
 };
 
@@ -64,6 +74,7 @@ export default function ProjectPage({ params }: ProjectPageProps) {
   const [mobileView, setMobileView] = useState<'notes' | 'editor'>('notes');
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState<string>('');
+  const [deleteConfirmNoteId, setDeleteConfirmNoteId] = useState<string | null>(null);
 
   const resolvedParams = use(params);
   const projectId = resolvedParams.id;
@@ -245,6 +256,46 @@ export default function ProjectPage({ params }: ProjectPageProps) {
       console.error('Error updating note title:', error);
       // You could add a toast notification here
     }
+  };
+
+  const deleteNoteFromAPI = async (noteId: string) => {
+    try {
+      console.log('Deleting note:', noteId);
+      
+      const response = await fetch(`/api/notes/${noteId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete note');
+      }
+
+      console.log('Note deleted successfully');
+      
+      // Remove note from state
+      setNotes(prev => prev.filter(note => note.id !== noteId));
+      
+      // Clear selected note if it was the deleted one
+      if (selectedNote?.id === noteId) {
+        setSelectedNote(null);
+      }
+    } catch (error) {
+      console.error('Error deleting note:', error);
+    }
+  };
+
+  const handleDeleteNote = (noteId: string) => {
+    deleteNoteFromAPI(noteId);
+    setDeleteConfirmNoteId(null);
+  };
+
+  const handleStartDelete = (noteId: string) => {
+    setDeleteConfirmNoteId(noteId);
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteConfirmNoteId(null);
   };
 
   const handleDownloadNotes = () => {
@@ -475,6 +526,17 @@ export default function ProjectPage({ params }: ProjectPageProps) {
                                 >
                                   <Edit2 className="h-3 w-3" />
                                 </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleStartDelete(note.id);
+                                  }}
+                                  className="h-6 w-6 p-0 text-gray-400 hover:text-red-600"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
                               </div>
                             )}
                             <p className="text-xs text-gray-500 mt-1">
@@ -602,6 +664,17 @@ export default function ProjectPage({ params }: ProjectPageProps) {
                                     className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600"
                                   >
                                     <Edit2 className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleStartDelete(note.id);
+                                    }}
+                                    className="h-6 w-6 p-0 text-gray-400 hover:text-red-600"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
                                   </Button>
                                 </div>
                               )}
@@ -759,6 +832,40 @@ export default function ProjectPage({ params }: ProjectPageProps) {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      {deleteConfirmNoteId && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" dir={dir}>
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex-shrink-0 w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                <Trash2 className="h-5 w-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-medium text-gray-900">{t.deleteNote}</h3>
+              </div>
+            </div>
+            <p className="text-gray-600 mb-6">{t.confirmDelete}</p>
+            <p className="text-sm text-gray-500 mb-6">{t.confirmDeleteDescription}</p>
+            <div className="flex justify-end gap-3">
+              <Button
+                variant="outline"
+                onClick={handleCancelDelete}
+                className="text-gray-700 hover:text-gray-900"
+              >
+                {t.cancel}
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => handleDeleteNote(deleteConfirmNoteId)}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {t.delete}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
