@@ -359,7 +359,7 @@ export default function ProjectDetailPage() {
                     }
                   }}
                   initialActiveTab="finding"
-                  onSave={async (noteId, tabs, _activeTab) => {
+                  onSave={async (noteId, tabs) => {
                     // Extract content from the finding tab for the main content
                     const content = tabs.finding?.content || '';
                     if (content.trim()) {

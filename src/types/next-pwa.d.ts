@@ -9,6 +9,7 @@ declare module 'next-pwa' {
     runtimeCaching?: Array<{
       urlPattern: RegExp;
       handler: string;
+      method?: string;
       options?: {
         cacheName: string;
         expiration?: {
