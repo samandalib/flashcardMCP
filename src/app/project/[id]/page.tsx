@@ -7,7 +7,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useLocale } from '@/components/LocaleContext';
 import { TabbedEditor } from '@/components/TabbedEditor';
 import { Project, Note } from '@/lib/supabase';
-import { ArrowLeft, Menu, FileText, Plus, Download, Edit2, Check, X, Trash2 } from 'lucide-react';
+import { ArrowLeft, Menu, FileText, Plus, Download, Edit2, Check, X, Trash2, GripVertical } from 'lucide-react';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 
 interface ProjectPageProps {
   params: Promise<{ id: string }>;
@@ -298,6 +299,52 @@ export default function ProjectPage({ params }: ProjectPageProps) {
     setDeleteConfirmNoteId(null);
   };
 
+  const handleDragEnd = async (result: DropResult) => {
+    if (!result.destination) {
+      return;
+    }
+
+    const { source, destination } = result;
+
+    if (source.index === destination.index) {
+      return;
+    }
+
+    // Reorder notes array
+    const reorderedNotes = Array.from(notes);
+    const [removed] = reorderedNotes.splice(source.index, 1);
+    reorderedNotes.splice(destination.index, 0, removed);
+
+    // Update local state immediately for better UX
+    setNotes(reorderedNotes);
+
+    // Prepare the new order data for API
+    const noteOrders = reorderedNotes.map((note, index) => ({
+      id: note.id,
+      order: index
+    }));
+
+    try {
+      const response = await fetch('/api/notes/reorder', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ noteOrders }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update note order');
+      }
+
+      console.log('Notes reordered successfully');
+    } catch (error) {
+      console.error('Error reordering notes:', error);
+      // Revert the local state change on error
+      setNotes(notes);
+    }
+  };
+
   const handleDownloadNotes = () => {
     if (!project || notes.length === 0) {
       return;
@@ -455,28 +502,46 @@ export default function ProjectPage({ params }: ProjectPageProps) {
                   </Button>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  {notes.map((note) => (
-                    <Card
-                      key={note.id}
-                      className={`transition-colors ${
-                        editingNoteId === note.id 
-                          ? 'cursor-default' 
-                          : 'cursor-pointer'
-                      } ${
-                        selectedNote?.id === note.id 
-                          ? 'bg-blue-50 border-blue-200' 
-                          : 'hover:bg-gray-50'
-                      }`}
-                      onClick={() => {
-                        if (editingNoteId !== note.id) {
-                          handleNoteSelect(note);
-                        }
-                      }}
-                    >
-                      <CardContent className="p-3">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1 min-w-0">
+                <DragDropContext onDragEnd={handleDragEnd}>
+                  <Droppable droppableId="desktop-notes">
+                    {(provided) => (
+                      <div 
+                        className="space-y-2" 
+                        {...provided.droppableProps} 
+                        ref={provided.innerRef}
+                      >
+                        {notes.map((note, index) => (
+                          <Draggable key={note.id} draggableId={note.id} index={index}>
+                            {(provided, snapshot) => (
+                              <Card
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                className={`transition-colors ${
+                                  editingNoteId === note.id 
+                                    ? 'cursor-default' 
+                                    : 'cursor-pointer'
+                                } ${
+                                  selectedNote?.id === note.id 
+                                    ? 'bg-blue-50 border-blue-200' 
+                                    : 'hover:bg-gray-50'
+                                } ${
+                                  snapshot.isDragging ? 'shadow-lg' : ''
+                                }`}
+                                onClick={() => {
+                                  if (editingNoteId !== note.id) {
+                                    handleNoteSelect(note);
+                                  }
+                                }}
+                              >
+                                <CardContent className="p-3">
+                                  <div className="flex items-start justify-between">
+                                    <div 
+                                      {...provided.dragHandleProps}
+                                      className="flex-shrink-0 mr-2 flex items-center justify-center text-gray-300 hover:text-gray-400 cursor-grab active:cursor-grabbing"
+                                    >
+                                      <GripVertical className="h-4 w-4" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
                             {editingNoteId === note.id ? (
                               <div className="flex items-center gap-2">
                                 <input
@@ -542,12 +607,18 @@ export default function ProjectPage({ params }: ProjectPageProps) {
                             <p className="text-xs text-gray-500 mt-1">
                               {new Date(note.updated_at).toLocaleDateString(locale === 'fa' ? 'fa-IR' : 'en-US')}
                             </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
+                </DragDropContext>
               )}
             </div>
           </div>
@@ -598,24 +669,42 @@ export default function ProjectPage({ params }: ProjectPageProps) {
                     </Button>
                   </div>
                 ) : (
-                  <div className="space-y-3">
-                    {notes.map((note) => (
-                      <Card
-                        key={note.id}
-                        className={`transition-colors ${
-                          editingNoteId === note.id 
-                            ? 'cursor-default' 
-                            : 'cursor-pointer hover:bg-gray-50'
-                        }`}
-                        onClick={() => {
-                          if (editingNoteId !== note.id) {
-                            handleNoteSelect(note);
-                          }
-                        }}
-                      >
-                        <CardContent className="p-4">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1 min-w-0">
+                  <DragDropContext onDragEnd={handleDragEnd}>
+                    <Droppable droppableId="mobile-notes">
+                      {(provided) => (
+                        <div 
+                          className="space-y-3" 
+                          {...provided.droppableProps} 
+                          ref={provided.innerRef}
+                        >
+                          {notes.map((note, index) => (
+                            <Draggable key={note.id} draggableId={note.id} index={index}>
+                              {(provided, snapshot) => (
+                                <Card
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  className={`transition-colors ${
+                                    editingNoteId === note.id 
+                                      ? 'cursor-default' 
+                                      : 'cursor-pointer hover:bg-gray-50'
+                                  } ${
+                                    snapshot.isDragging ? 'shadow-lg' : ''
+                                  }`}
+                                  onClick={() => {
+                                    if (editingNoteId !== note.id) {
+                                      handleNoteSelect(note);
+                                    }
+                                  }}
+                                >
+                                  <CardContent className="p-4">
+                                    <div className="flex items-start justify-between">
+                                      <div 
+                                        {...provided.dragHandleProps}
+                                        className="flex-shrink-0 mr-3 flex items-center justify-center text-gray-300 hover:text-gray-400 cursor-grab active:cursor-grabbing"
+                                      >
+                                        <GripVertical className="h-5 w-5" />
+                                      </div>
+                                      <div className="flex-1 min-w-0">
                               {editingNoteId === note.id ? (
                                 <div className="flex items-center gap-2">
                                   <input
@@ -681,12 +770,18 @@ export default function ProjectPage({ params }: ProjectPageProps) {
                               <p className="text-sm text-gray-500 mt-1">
                                 {new Date(note.updated_at).toLocaleDateString(locale === 'fa' ? 'fa-IR' : 'en-US')}
                               </p>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
+                                      </div>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              )}
+                            </Draggable>
+                          ))}
+                          {provided.placeholder}
+                        </div>
+                      )}
+                    </Droppable>
+                  </DragDropContext>
                 )}
               </div>
             </div>

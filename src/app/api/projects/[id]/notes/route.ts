@@ -17,7 +17,7 @@ export async function GET(
       .from('notes')
       .select('*')
       .eq('project_id', projectId)
-      .order('created_at', { ascending: false });
+      .order('display_order', { ascending: true });
 
     if (error) {
       console.error('Supabase error:', error);
@@ -92,13 +92,26 @@ export async function POST(
       defaultTabs.finding.content = content.trim();
     }
 
+    // Get the highest display_order for this project to place new note at the end
+    const { data: maxOrderData } = await supabase
+      .from('notes')
+      .select('display_order')
+      .eq('project_id', projectId)
+      .order('display_order', { ascending: false })
+      .limit(1);
+    
+    const nextOrder = maxOrderData && maxOrderData.length > 0 
+      ? (maxOrderData[0].display_order || 0) + 1 
+      : 0;
+
     const noteData = {
       project_id: projectId,
       title: title.trim(),
       content: content ? content.trim() : '',
       tabs: tabs || defaultTabs,
       active_tab: active_tab || 'finding',
-      default_tabs: ['finding', 'evidence', 'details']
+      default_tabs: ['finding', 'evidence', 'details'],
+      display_order: nextOrder
     };
 
     const { data, error } = await supabase
