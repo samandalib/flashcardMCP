@@ -525,7 +525,7 @@ export default function ProjectPage({ params }: ProjectPageProps) {
                                     ? 'bg-blue-50 border-blue-200' 
                                     : 'hover:bg-gray-50'
                                 } ${
-                                  snapshot.isDragging ? 'shadow-lg' : ''
+                                  snapshot.isDragging ? 'shadow-lg bg-blue-50 border-blue-200' : ''
                                 }`}
                                 onClick={() => {
                                   if (editingNoteId !== note.id) {
@@ -537,7 +537,7 @@ export default function ProjectPage({ params }: ProjectPageProps) {
                                   <div className="flex items-start justify-between">
                                     <div 
                                       {...provided.dragHandleProps}
-                                      className="flex-shrink-0 mr-2 flex items-center justify-center text-gray-300 hover:text-gray-400 cursor-grab active:cursor-grabbing"
+                                      className="flex-shrink-0 mr-2 flex items-center justify-center text-gray-300 hover:text-gray-400 cursor-grab active:cursor-grabbing p-1 -m-1"
                                     >
                                       <GripVertical className="h-4 w-4" />
                                     </div>
@@ -683,15 +683,16 @@ export default function ProjectPage({ params }: ProjectPageProps) {
                                 <Card
                                   ref={provided.innerRef}
                                   {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
                                   className={`transition-colors ${
                                     editingNoteId === note.id 
                                       ? 'cursor-default' 
                                       : 'cursor-pointer hover:bg-gray-50'
                                   } ${
-                                    snapshot.isDragging ? 'shadow-lg' : ''
+                                    snapshot.isDragging ? 'shadow-lg bg-blue-50 border-blue-200' : ''
                                   }`}
                                   onClick={() => {
-                                    if (editingNoteId !== note.id) {
+                                    if (editingNoteId !== note.id && !snapshot.isDragging) {
                                       handleNoteSelect(note);
                                     }
                                   }}
@@ -699,10 +700,9 @@ export default function ProjectPage({ params }: ProjectPageProps) {
                                   <CardContent className="p-4">
                                     <div className="flex items-start justify-between">
                                       <div 
-                                        {...provided.dragHandleProps}
-                                        className="flex-shrink-0 mr-3 flex items-center justify-center text-gray-300 hover:text-gray-400 cursor-grab active:cursor-grabbing"
+                                        className="flex-shrink-0 mr-3 flex items-center justify-center text-gray-300"
                                       >
-                                        <GripVertical className="h-5 w-5" />
+                                        <GripVertical className="h-6 w-6" />
                                       </div>
                                       <div className="flex-1 min-w-0">
                               {editingNoteId === note.id ? (
